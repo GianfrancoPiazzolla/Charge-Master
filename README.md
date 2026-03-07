@@ -149,22 +149,22 @@ All charts feature:
 
 ```
 ┌──────────────────────────────────────────────┐
-│  ⚡ CHARGE MASTER          ⚙  🌙  ℹ          │  ← Fixed header with Settings, Theme toggle, About
+│  ⚡ CHARGE MASTER          ⚙  🌙  ℹ         │  ← Fixed header with Settings, Theme toggle, About
 ├──────────────────────────────────────────────┤
 │                                              │
 │  Records │ Total Spent │ Total Km            │  ← Summary ribbon (always visible)
 │                                              │
 │  ┌──────────────────────────────────────┐    │
 │  │ ❄ 2024-12-15          🟢 €0.14/km   │    │  ← Record card (season-colored border)
-│  │ 320 km  |  55 kWh  |  €0.25/kWh    │    │
-│  │ € 13.75         Shell Station A1 📍  │    │
+│  │ 320 km  |  55 kWh  |  €0.25/kWh      │    │
+│  │ € 13.75         Shell Station A1 📍   │   │
 │  └──────────────────────────────────────┘    │
 │                                              │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination
 │                                              │
 │                                  [ + ]       │  ← Floating Action Button
 ├──────────────────────────────────────────────┤
-│  🏠 Refueling │ 📊 Statistics │ 📈 Charts    │  ← Bottom tab bar
+│  🏠 Refueling │ 📊 Statistics │ 📈 Charts   │  ← Bottom tab bar
 └──────────────────────────────────────────────┘
 ```
 
@@ -401,10 +401,10 @@ Since the entire app is a single `index.html`, there is no build system to confi
 
 ---
 
-<div align="center">
+## 📜 License
 
-Made with ⚡ by the **Charge Master Team**
+Distributed under the **MIT License**. Feel free to use, modify, and share.
 
-*Track smarter. Drive better.*
+---
 
-</div>
+> 🌱 *Developed for the sustainable mobility community. If you find this tool helpful, please leave a ⭐ on GitHub!*

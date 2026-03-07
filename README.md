@@ -54,11 +54,11 @@
 - **📄 Paginated record list** — records are displayed 20 per page, sorted by date (newest first), with pagination controls at the bottom.
 - **🏷️ Each record stores:**
   - 📅 Date of the refueling/charging session
-  - 📏 Distance traveled since the last session (in km)
+  - 📏 Distance traveled since the last session (in Km)
   - ⚡ / ⛽ Energy or fuel quantity (kWh or Liters, switchable globally)
   - 💶 Unit price (€ per kWh or € per Liter)
   - 💰 Total cost (auto-computed in real time)
-  - 📊 Cost per km (auto-computed in real time)
+  - 📊 Cost per Km (auto-computed in real time)
   - 📍 Location / station name (optional free-text field, max 100 characters)
   - 📝 Notes (optional free-text field, max 500 characters with live character counter)
 - **⚙️ Auto-computed fields:** As the user types quantity and unit price, the **Total Cost** and **Cost per Km** are calculated and displayed live inside the form, before saving.
@@ -73,10 +73,10 @@
   - 🌱 **Spring** (Mar, Apr, May) → Green (`#4ADE80`)
   - ☀️ **Summer** (Jun, Jul, Aug) → Orange (`#FB923C`)
   - 🍂 **Autumn** (Sep, Oct, Nov) → Amber (`#FBBF24`)
-- **🟢🟡🔴 Cost-per-km badge:** Each record card shows a color-coded efficiency badge:
-  - 🟢 Green (`badge-good`) — cost/km is below or equal to average
-  - 🟡 Yellow (`badge-mid`) — cost/km is between average and 120% of average
-  - 🔴 Red (`badge-bad`) — cost/km exceeds 120% of average
+- **🟢🟡🔴 Cost-per-Km badge:** Each record card shows a color-coded efficiency badge:
+  - 🟢 Green (`badge-good`) — cost/Km is below or equal to average
+  - 🟡 Yellow (`badge-mid`) — cost/Km is between average and 120% of average
+  - 🔴 Red (`badge-bad`) — cost/Km exceeds 120% of average
 - **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** across all records.
 - **📡 Empty state:** When no records exist, an illustrated placeholder is shown with a call-to-action button to add the first record, and the FAB pulses with a glow animation to draw attention.
 - **🔔 Toast notifications:** Non-intrusive, auto-dismissing toast messages (max 3 at once) appear after every user action (save, delete, export, import), with ✓ / ✕ / ⚠ icons.
@@ -116,12 +116,12 @@ An accordion-style section groups statistics by season. Each season card (Winter
 
 A secondary grid provides:
 - 📋 **Total Records** — count of sessions in the selected period.
-- 🛣️ **Total Distance** — sum of all km covered.
+- 🛣️ **Total Distance** — sum of all Km covered.
 - 💰 **Total Expense** — total euros spent.
 - ⚡ / ⛽ **Total Energy / Fuel** — total kWh or Liters consumed.
-- ⚡ **Efficiency** — average km per unit (km/kWh or km/L).
-- 📈 **Average Consumption** — kWh or L per 100 km.
-- 📊 **Average Cost per Km** — average €/km across the period.
+- ⚡ **Efficiency** — average Km per unit (Km/kWh or Km/L).
+- 📈 **Average Consumption** — kWh or L per 100 Km.
+- 📊 **Average Cost per Km** — average €/Km across the period.
 
 ### 📉 Charts Tab
 
@@ -130,7 +130,7 @@ Seven interactive charts powered by **Chart.js 4.4.1**, all themed to match the 
 | # | Chart | Type | Description |
 |---|-------|------|-------------|
 | 1 | **Unit Price Over Time** | Line | Price per unit plotted chronologically, with a dashed **5-point moving average** overlay. |
-| 2 | **Cost per Km Over Time** | Line | Cost/km per session plotted over time, with a dashed **flat average** reference line. |
+| 2 | **Cost per Km Over Time** | Line | Cost/Km per session plotted over time, with a dashed **flat average** reference line. |
 | 3 | **Distance Over Time** | Line | Km per session plotted over time, with a dashed **flat average** reference line. |
 | 4 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all records, not the filter), with bars color-coded by season. |
 | 5 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all records). |
@@ -155,8 +155,8 @@ All charts feature:
 │  Records │ Total Spent │ Total Km            │  ← Summary ribbon (always visible)
 │                                              │
 │  ┌──────────────────────────────────────┐    │
-│  │ ❄ 2024-12-15          🟢 €0.14/km   │    │  ← Record card (season-colored border)
-│  │ 320 km  |  55 kWh  |  €0.25/kWh      │    │
+│  │ ❄ 2024-12-15          🟢 €0.14/Km   │    │  ← Record card (season-colored border)
+│  │ 320 Km  |  55 kWh  |  €0.25/kWh      │    │
 │  │ € 13.75         Shell Station A1 📍   │   │
 │  └──────────────────────────────────────┘    │
 │                                              │
@@ -229,7 +229,7 @@ Upload `index.html` to any static hosting service (GitHub Pages, Netlify, Vercel
 2. A bottom sheet slides up with the entry form.
 3. Fill in:
    - **Date** — the date of the refueling/charging session.
-   - **Distance (km)** — the kilometers traveled since the last session.
+   - **Distance (Km)** — the kilometers traveled since the last session.
    - **Quantity** — energy (kWh) or fuel (Liters) consumed.
    - **Price per unit** — the price you paid per kWh or per Liter.
 4. The **Total Cost** and **Cost per Km** fields update automatically as you type.
@@ -298,8 +298,8 @@ Access Settings via the **⚙ gear icon** in the top-right header.
 ### ⚡ / ⛽ Preferred Unit
 
 Toggle between two tracking modes:
-- **⚡ kWh** — for electric vehicles (BEV). Labels throughout the app update to show kWh, km/kWh, and kWh/100km.
-- **⛽ Liters** — for ICE vehicles. Labels update to show L, km/L, and L/100km.
+- **⚡ kWh** — for electric vehicles (BEV). Labels throughout the app update to show kWh, Km/kWh, and kWh/100Km.
+- **⛽ Liters** — for ICE vehicles. Labels update to show L, Km/L, and L/100Km.
 
 Changing the unit is instant and affects all labels, forms, statistics, and chart tooltips throughout the app.
 

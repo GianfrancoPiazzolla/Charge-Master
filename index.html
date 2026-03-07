@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ChargeMaster">
+<meta name="description" content="Vehicle Fuel & Energy Consumption Tracker">
+<title>Charge Master</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-primary: #0A0E1A;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1E2435;
+  --bg-glass: rgba(255,255,255,0.04);
+  --accent-primary: #3B82F6;
+  --accent-secondary: #06B6D4;
+  --accent-glow: rgba(59,130,246,0.35);
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #475569;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-active: rgba(59,130,246,0.6);
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+  --season-winter: #60A5FA;
+  --season-spring: #4ADE80;
+  --season-summer: #FB923C;
+  --season-autumn: #FBBF24;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --transition-base: 300ms ease;
+  --header-h: 60px;
+  --tabbar-h: 64px;
+}
+
+[data-theme="light"] {
+  --bg-primary: #F1F5F9;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #E2E8F0;
+  --bg-glass: rgba(0,0,0,0.03);
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --border-subtle: rgba(0,0,0,0.10);
+  --border-active: rgba(59,130,246,0.6);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: color var(--transition-base), background-color var(--transition-base);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+
+/* RIPPLE */
+.ripple-host { position: relative; overflow: hidden; cursor: pointer; }
+.ripple-host::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(255,255,255,0.18) 0%, transparent 70%);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s;
+}
+.ripple-host:active::after { opacity: 1; transition: opacity 0s; }
+.ripple-host:active { transform: scale(0.97); transition: transform 80ms; }
+
+/* HEADER */
+#app-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: var(--header-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  background: rgba(10,14,26,0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-subtle);
+}
+[data-theme="light"] #app-header { background: rgba(241,245,249,0.85); }
+
+.header-logo {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  text-decoration: none;
+}
+.header-logo svg { width: 28px; height: 28px; }
+.header-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #3B82F6, #06B6D4);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 40px; height: 40px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-secondary);
+  transition: all 150ms ease;
+  -webkit-appearance: none; appearance: none;
+}
+.icon-btn:hover { color: var(--text-primary); border-color: var(--border-active); box-shadow: 0 0 12px var(--accent-glow); }
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* MAIN CONTENT */
+#app-content {
+  position: fixed;
+  top: var(--header-h);
+  bottom: var(--tabbar-h);
+  left: 0; right: 0;
+  overflow: hidden;
+}
+.tab-panel {
+  position: absolute; inset: 0;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 16px 16px 24px;
+  opacity: 0; transform: translateX(30px);
+  pointer-events: none;
+  transition: opacity 280ms cubic-bezier(0.4,0,0.2,1), transform 280ms cubic-bezier(0.4,0,0.2,1);
+  will-change: opacity, transform;
+}
+.tab-panel.active {
+  opacity: 1; transform: translateX(0);
+  pointer-events: auto;
+}
+.tab-panel.exit-left { opacity: 0; transform: translateX(-30px); }
+
+/* BOTTOM TAB BAR */
+#tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  height: var(--tabbar-h);
+  display: flex; align-items: stretch;
+  background: rgba(10,14,26,0.9);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--border-subtle);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+[data-theme="light"] #tab-bar { background: rgba(241,245,249,0.9); }
+
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted);
+  transition: color 200ms ease;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.tab-btn svg { width: 22px; height: 22px; transition: transform 200ms ease; }
+.tab-btn span {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.tab-btn.active { color: var(--accent-primary); }
+.tab-btn.active svg { transform: scale(1.1); }
+.tab-btn::before {
+  content: '';
+  position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+  background: var(--accent-primary);
+  border-radius: 0 0 3px 3px;
+  transform: scaleX(0);
+  transition: transform 250ms cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 8px var(--accent-primary);
+}
+.tab-btn.active::before { transform: scaleX(1); }
+
+/* CARDS */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  position: relative;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.card-glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+}
+
+/* RECORD CARDS */
+.record-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  animation: cardIn 300ms cubic-bezier(0.4,0,0.2,1) both;
+}
+.record-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); border-color: var(--border-active); }
+.record-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+.season-winter::before { background: var(--season-winter); }
+.season-spring::before { background: var(--season-spring); }
+.season-summer::before { background: var(--season-summer); }
+.season-autumn::before { background: var(--season-autumn); }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.record-row { display: flex; align-items: center; justify-content: space-between; }
+.record-date { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--accent-primary); }
+.cost-badge {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  padding: 3px 8px; border-radius: 20px; font-weight: 600;
+}
+.badge-good { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-mid { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-bad { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+.stat-chips { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.stat-chip {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg-tertiary); border-radius: 8px;
+  padding: 4px 10px;
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+.stat-chip .chip-val { font-family: var(--font-mono); color: var(--text-primary); font-weight: 500; }
+
+.record-cost { font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 700; color: var(--text-primary); }
+.record-unit-price { font-size: var(--text-xs); color: var(--text-muted); margin-left: 8px; }
+.record-location { font-size: var(--text-xs); color: var(--text-secondary); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+
+.menu-btn {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border-radius: 8px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+  transition: background 150ms, color 150ms;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.menu-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+/* DROPDOWN */
+.dropdown {
+  position: absolute; right: 8px; top: calc(100% - 40px);
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); min-width: 130px; z-index: 50;
+  overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  animation: fadeScale 150ms ease;
+}
+@keyframes fadeScale { from { opacity:0; transform: scale(0.92); } to { opacity:1; transform:scale(1); } }
+.dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; cursor: pointer;
+  font-size: var(--text-sm); color: var(--text-secondary);
+  transition: background 150ms, color 150ms;
+}
+.dropdown-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.dropdown-item.danger { color: var(--danger); }
+.dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+
+/* SUMMARY RIBBON */
+.summary-ribbon {
+  display: flex; gap: 12px; margin-bottom: 14px;
+  background: var(--bg-tertiary); border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+.ribbon-item { flex: 1; text-align: center; }
+.ribbon-label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.ribbon-value { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--text-primary); margin-top: 2px; }
+
+/* SAMPLE BANNER */
+.sample-banner {
+  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--radius-md); padding: 12px 14px;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+.sample-banner-close {
+  margin-left: auto; background: rgba(239,68,68,0.15); color: var(--danger);
+  border: none; border-radius: 6px; padding: 4px 10px;
+  font-size: var(--text-xs); cursor: pointer; font-family: var(--font-body); font-weight: 600;
+  white-space: nowrap;
+}
+
+/* STAT CARDS GRID */
+.stats-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+.stats-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 400px) { .stats-grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .stats-grid-2 { grid-template-columns: 1fr; } }
+
+.stat-card {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 14px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  animation: cardIn 300ms cubic-bezier(0.4,0,0.2,1) both;
+}
+.stat-card-label {
+  font-size: var(--text-xs); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: 5px;
+}
+.stat-card-value {
+  font-family: var(--font-mono); font-size: var(--text-xl); font-weight: 700;
+  line-height: 1.1; margin-top: 2px;
+}
+.stat-card-sub { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); }
+
+/* FILTER BAR */
+.filter-bar {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 12px 14px; margin-bottom: 14px;
+}
+.segmented { display: flex; background: var(--bg-tertiary); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 10px; }
+.seg-btn {
+  flex: 1; padding: 7px 0; border: none; background: none;
+  border-radius: 8px; cursor: pointer; font-family: var(--font-body);
+  font-size: var(--text-sm); font-weight: 600; color: var(--text-muted);
+  transition: all 150ms ease; appearance: none; -webkit-appearance: none;
+}
+.seg-btn.active { background: var(--accent-primary); color: #fff; box-shadow: 0 2px 8px var(--accent-glow); }
+
+.filter-inputs { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter-select {
+  background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); border-radius: 8px; padding: 7px 10px;
+  font-family: var(--font-body); font-size: var(--text-sm); cursor: pointer;
+  flex: 1; min-width: 90px; -webkit-appearance: none; appearance: none;
+}
+.filter-input {
+  background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); border-radius: 8px; padding: 7px 10px;
+  font-family: var(--font-body); font-size: var(--text-sm); flex: 1;
+}
+.filter-input:focus, .filter-select:focus { outline: none; border-color: var(--border-active); }
+
+/* SECTION HEADER */
+.section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 16px 0 10px;
+}
+.section-title {
+  font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-primary);
+}
+
+/* SEASON CARDS */
+.season-card {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); margin-bottom: 8px; overflow: hidden;
+}
+.season-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  cursor: pointer; user-select: none;
+}
+.season-icon { font-size: 18px; }
+.season-name { font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); text-transform: uppercase; letter-spacing: 0.06em; flex: 1; }
+.season-chevron { color: var(--text-muted); transition: transform 250ms ease; }
+.season-card.open .season-chevron { transform: rotate(180deg); }
+.season-body { display: none; padding: 0 14px 14px; }
+.season-card.open .season-body { display: block; }
+.season-stats { display: flex; gap: 8px; }
+.season-stat { flex: 1; background: var(--bg-tertiary); border-radius: 10px; padding: 10px; text-align: center; }
+.season-stat-label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.season-stat-value { font-family: var(--font-mono); font-weight: 700; font-size: var(--text-base); margin-top: 4px; }
+
+/* CHARTS */
+.chart-card {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px;
+  position: relative;
+}
+.chart-title {
+  font-family: var(--font-display); font-size: var(--text-base); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.chart-wrap { position: relative; height: 220px; }
+.chart-wrap-tall { position: relative; height: 260px; }
+
+/* FAB */
+#fab {
+  position: fixed; bottom: calc(var(--tabbar-h) + 16px); right: 16px; z-index: 150;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none; cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  animation: bounceIn 500ms cubic-bezier(0.34,1.56,0.64,1) both;
+  appearance: none;
+  -webkit-appearance: none;
+}
+#fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px var(--accent-glow); }
+#fab:active { transform: scale(0.94); }
+#fab svg { width: 24px; height: 24px; }
+@keyframes bounceIn { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
+#fab.pulse { animation: bounceIn 500ms cubic-bezier(0.34,1.56,0.64,1) both, fabPulse 2s 600ms ease-in-out infinite; }
+@keyframes fabPulse { 0%,100% { box-shadow:0 4px 20px var(--accent-glow); } 50% { box-shadow:0 4px 32px rgba(59,130,246,0.7); } }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%; max-width: 600px; max-height: 92vh;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 20px 20px 32px;
+  transform: translateY(40px);
+  transition: transform 200ms ease;
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+
+.modal-dialog {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  width: 90%; max-width: 360px;
+  padding: 24px;
+  transform: scale(0.92); opacity: 0;
+  transition: transform 200ms ease, opacity 200ms ease;
+  box-shadow: 0 0 60px rgba(59,130,246,0.15);
+  align-self: center;
+}
+.modal-overlay.open .modal-dialog { transform: scale(1); opacity: 1; }
+
+.modal-handle { width: 36px; height: 4px; background: var(--border-subtle); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title {
+  font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+/* FORM */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.06em; }
+.form-input {
+  width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 11px 14px;
+  color: var(--text-primary); font-family: var(--font-body); font-size: var(--text-base);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  -webkit-appearance: none; appearance: none;
+}
+.form-input:focus { outline: none; border-color: var(--border-active); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+.form-input.error { border-color: var(--danger); }
+.form-input.valid { border-color: var(--success); }
+.form-error { font-size: var(--text-xs); color: var(--danger); margin-top: 4px; display: none; }
+.form-input.error + .form-error { display: block; }
+.form-input.shake { animation: shake 300ms ease; }
+textarea.form-input { resize: vertical; min-height: 72px; }
+.char-counter { font-size: var(--text-xs); color: var(--text-muted); text-align: right; margin-top: 3px; }
+
+.computed-field {
+  background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--radius-md); padding: 10px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.computed-label { font-size: var(--text-sm); color: var(--text-secondary); }
+.computed-value { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 700; color: var(--accent-primary); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* BUTTONS */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 13px; border-radius: var(--radius-md); border: none;
+  font-family: var(--font-body); font-size: var(--text-base); font-weight: 600;
+  cursor: pointer; transition: all 150ms ease; appearance: none; -webkit-appearance: none;
+  margin-bottom: 8px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), #2563EB);
+  color: #fff; box-shadow: 0 4px 16px var(--accent-glow);
+}
+.btn-primary:hover { box-shadow: 0 6px 24px var(--accent-glow); }
+.btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+.btn-danger { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+.btn-success { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+
+/* SETTINGS */
+.settings-section { margin-bottom: 20px; }
+.settings-section-title { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 10px; }
+
+/* SEGMENTED UNIT */
+.unit-pills { display: flex; background: var(--bg-tertiary); border-radius: 10px; padding: 3px; gap: 3px; }
+.unit-pill {
+  flex: 1; padding: 9px; border: none; border-radius: 8px;
+  cursor: pointer; font-family: var(--font-body); font-size: var(--text-sm); font-weight: 600;
+  color: var(--text-muted); background: none; transition: all 150ms ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.unit-pill.active { background: var(--accent-primary); color: #fff; box-shadow: 0 2px 8px var(--accent-glow); }
+
+/* TOGGLE */
+.toggle-wrap { display: flex; align-items: center; gap: 12px; }
+.toggle-label { font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); flex: 1; }
+.toggle {
+  width: 48px; height: 28px; background: var(--bg-tertiary); border-radius: 14px;
+  position: relative; cursor: pointer; transition: background 200ms ease;
+  border: 1px solid var(--border-subtle); flex-shrink: 0;
+}
+.toggle.on { background: var(--accent-primary); border-color: var(--accent-primary); }
+.toggle::after {
+  content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; top: 2px; left: 2px;
+  transition: transform 200ms cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(20px); }
+
+/* TOAST */
+#toast-container {
+  position: fixed; bottom: calc(var(--tabbar-h) + 12px); left: 50%; transform: translateX(-50%);
+  z-index: 900; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none; width: 90%; max-width: 360px;
+}
+.toast {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--text-sm); box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  width: 100%; pointer-events: auto;
+  animation: toastIn 250ms ease;
+}
+.toast.out { animation: toastOut 300ms ease forwards; }
+@keyframes toastIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity:1; transform: translateY(0); } to { opacity:0; transform: translateY(20px); } }
+.toast-icon { font-size: 18px; flex-shrink: 0; }
+.toast.success { border-color: rgba(16,185,129,0.3); }
+.toast.error { border-color: rgba(239,68,68,0.3); }
+.toast.warning { border-color: rgba(245,158,11,0.3); }
+
+/* EMPTY STATE */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 48px 24px; text-align: center;
+  gap: 12px; min-height: 300px;
+}
+.empty-state svg { width: 80px; height: 80px; opacity: 0.3; }
+.empty-title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; color: var(--text-secondary); }
+.empty-sub { font-size: var(--text-sm); color: var(--text-muted); max-width: 240px; }
+.empty-cta {
+  margin-top: 8px; background: var(--accent-primary); color: #fff;
+  border: none; border-radius: var(--radius-md); padding: 11px 24px;
+  font-family: var(--font-body); font-weight: 600; font-size: var(--text-sm);
+  cursor: pointer; box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+/* ABOUT MODAL */
+.about-header { text-align: center; margin-bottom: 16px; }
+.about-logo { width: 56px; height: 56px; margin: 0 auto 10px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+.about-app-name { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: linear-gradient(135deg, #3B82F6, #06B6D4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.about-version { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px; }
+.about-author-card { background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 12px 14px; display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.about-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; color: #fff; flex-shrink: 0; }
+.about-author-name { font-weight: 700; font-size: var(--text-base); }
+.about-author-tag { font-size: var(--text-xs); color: var(--text-muted); }
+.about-desc { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+
+/* CONFIRM INLINE */
+.confirm-inline {
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius-md); padding: 10px 12px;
+  font-size: var(--text-sm); color: var(--danger); margin: 8px 0;
+  display: flex; align-items: center; gap: 10px;
+}
+.confirm-inline .cta-btns { display: flex; gap: 8px; margin-left: auto; }
+.confirm-inline button {
+  padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: var(--text-xs); font-weight: 700; font-family: var(--font-body);
+}
+.confirm-yes { background: var(--danger); color: #fff; }
+.confirm-no { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+/* IMPORT CHOICE MODAL */
+.import-choice-wrap { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.import-choice-btn {
+  background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 14px;
+  text-align: left; cursor: pointer; transition: all 150ms;
+}
+.import-choice-btn:hover { border-color: var(--border-active); }
+.import-choice-btn.danger-choice { border-color: rgba(239,68,68,0.3); }
+.import-choice-btn.danger-choice:hover { background: rgba(239,68,68,0.08); }
+.import-choice-title { font-weight: 700; font-size: var(--text-sm); margin-bottom: 3px; }
+.import-choice-desc { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* DATE INPUT fix for dark */
+input[type="date"], input[type="number"], input[type="text"], select, textarea {
+  color-scheme: dark;
+}
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="text"],
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  color-scheme: light;
+}
+
+/* PAGINATION */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+.page-btn {
+  width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-subtle);
+  background: var(--bg-tertiary); color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-mono);
+  font-size: var(--text-sm); transition: all 150ms; appearance: none; -webkit-appearance: none;
+}
+.page-btn.active { background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); }
+.page-btn:hover:not(.active) { border-color: var(--border-active); color: var(--text-primary); }
+.page-info { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="app-header">
+  <a class="header-logo ripple-host" onclick="scrollToTop()" href="javascript:void(0)" aria-label="Charge Master home">
+    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 2L4 16h10l-2 10L24 12H14L16 2z" fill="url(#lg1)" stroke="none"/>
+      <defs><linearGradient id="lg1" x1="4" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#3B82F6"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs>
+    </svg>
+    <span class="header-title">Charge Master</span>
+  </a>
+  <div class="header-actions">
+    <button class="icon-btn ripple-host" id="btn-settings" aria-label="Settings" onclick="openSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="icon-btn ripple-host" id="btn-theme" aria-label="Toggle theme" onclick="toggleTheme()">
+      <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="icon-btn ripple-host" id="btn-about" aria-label="About" onclick="openAbout()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm1 14.93V17a1 1 0 0 1-2 0v-.07A7.008 7.008 0 0 1 5 10a7 7 0 0 1 14 0 7.008 7.008 0 0 1-6 6.93zM12 6a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 12 6z" opacity=".3"/><path d="M12 0a12 12 0 1 0 12 12A12.013 12.013 0 0 0 12 0zm0 22a10 10 0 1 1 10-10 10.011 10.011 0 0 1-10 10zm1-9v4a1 1 0 0 1-2 0v-4a1 1 0 0 1 2 0zm-1-5.5A1.5 1.5 0 1 0 13.5 9 1.5 1.5 0 0 0 12 7.5z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main id="app-content">
+  <!-- TAB 1: REFUELING -->
+  <div class="tab-panel active" id="panel-refueling" role="tabpanel" aria-label="Refueling">
+    <div id="sample-banner-wrap"></div>
+    <div id="summary-ribbon-wrap"></div>
+    <div id="records-list"></div>
+    <div id="pagination-wrap"></div>
+  </div>
+
+  <!-- TAB 2: STATISTICS -->
+  <div class="tab-panel" id="panel-statistics" role="tabpanel" aria-label="Statistics">
+    <div id="stats-filter-bar"></div>
+    <div id="stats-content"></div>
+  </div>
+
+  <!-- TAB 3: CHARTS -->
+  <div class="tab-panel" id="panel-charts" role="tabpanel" aria-label="Charts">
+    <div id="charts-content"></div>
+  </div>
+</main>
+
+<!-- BOTTOM TAB BAR -->
+<nav id="tab-bar" role="tablist">
+  <button class="tab-btn active ripple-host" id="tab-refueling" role="tab" aria-selected="true" aria-controls="panel-refueling" onclick="switchTab('refueling')" aria-label="Refueling tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/><path d="M3 8l9 6 9-6"/></svg>
+    <span>Refueling</span>
+  </button>
+  <button class="tab-btn ripple-host" id="tab-statistics" role="tab" aria-selected="false" aria-controls="panel-statistics" onclick="switchTab('statistics')" aria-label="Statistics tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+    <span>Statistics</span>
+  </button>
+  <button class="tab-btn ripple-host" id="tab-charts" role="tab" aria-selected="false" aria-controls="panel-charts" onclick="switchTab('charts')" aria-label="Charts tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Charts</span>
+  </button>
+</nav>
+
+<!-- FAB -->
+<button id="fab" aria-label="Add Refueling Record" onclick="openForm()" title="Add Refueling Record">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- MODAL: ADD/EDIT FORM -->
+<div class="modal-overlay" id="modal-form" role="dialog" aria-modal="true" aria-label="Refueling form">
+  <div class="modal-sheet" id="form-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="form-modal-title">Add Refueling Record</div>
+    <form id="refuel-form" novalidate>
+      <input type="hidden" id="field-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="field-date">Date</label>
+          <input type="date" class="form-input" id="field-date" required aria-label="Date">
+          <div class="form-error">Date is required</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="field-distance">Distance (Km)</label>
+          <input type="number" class="form-input" id="field-distance" min="0.1" step="0.1" placeholder="e.g. 320" required aria-label="Distance in Km">
+          <div class="form-error">Must be > 0</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" id="label-quantity" for="field-quantity">Quantity (kWh)</label>
+          <input type="number" class="form-input" id="field-quantity" min="0.01" step="0.01" placeholder="e.g. 55" required aria-label="Quantity">
+          <div class="form-error">Must be > 0</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="label-price" for="field-price">Price per kWh (€)</label>
+          <input type="number" class="form-input" id="field-price" min="0.01" step="0.01" placeholder="e.g. 0.25" required aria-label="Unit price">
+          <div class="form-error">Must be > 0</div>
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="computed-field">
+          <span class="computed-label">Total Cost </span>
+          <span class="computed-value" id="computed-total">—</span>
+        </div>
+        <div class="computed-field">
+          <span class="computed-label">Cost/Km </span>
+          <span class="computed-value" id="computed-cpkm">—</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="field-location">Location</label>
+        <input type="text" class="form-input" id="field-location" maxlength="100" placeholder="e.g. Shell Station, Highway A1" aria-label="Location">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="field-notes">Notes</label>
+        <textarea class="form-input" id="field-notes" rows="3" maxlength="500" placeholder="Any additional notes..." aria-label="Notes"></textarea>
+        <div class="char-counter"><span id="notes-count">0</span>/500</div>
+      </div>
+      <div id="delete-confirm-wrap"></div>
+      <button type="submit" class="btn btn-primary ripple-host" id="btn-save">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Record
+      </button>
+      <button type="button" class="btn btn-secondary ripple-host" onclick="closeForm()">Cancel</button>
+      <button type="button" class="btn btn-danger ripple-host" id="btn-delete-record" style="display:none" onclick="showDeleteConfirm()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Delete Record
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: SETTINGS -->
+<div class="modal-overlay" id="modal-settings" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙ Settings</div>
+    <div class="settings-section">
+      <div class="settings-section-title">Preferred Unit</div>
+      <div class="unit-pills">
+        <button class="unit-pill ripple-host" id="pill-kwh" onclick="setUnit('kWh')" aria-label="Use kWh unit">⚡ kWh</button>
+        <button class="unit-pill ripple-host" id="pill-l" onclick="setUnit('L')" aria-label="Use Liters unit">⛽ Liters</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Display Mode</div>
+      <div class="toggle-wrap">
+        <span class="toggle-label" id="theme-label">🌙 Dark Mode</span>
+        <div class="toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode" role="switch"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Data Management</div>
+      <button class="btn btn-secondary ripple-host" onclick="exportRecords()" aria-label="Export all records">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export All Records (JSON)
+      </button>
+      <button class="btn btn-secondary ripple-host" onclick="triggerImport()" aria-label="Import records from file">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import Records from File
+      </button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(event)">
+      <button class="btn btn-danger ripple-host" onclick="showDeleteAllConfirm()" aria-label="Delete all refueling records" id="btn-delete-all-records">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Delete All Records
+      </button>
+      <div id="delete-all-confirm-wrap"></div>
+    </div>
+    <button class="btn btn-secondary ripple-host" onclick="closeModal('modal-settings')">Close</button>
+  </div>
+</div>
+
+<!-- MODAL: IMPORT CHOICE -->
+<div class="modal-overlay" id="modal-import-choice" role="dialog" aria-modal="true" aria-label="Import options">
+  <div class="modal-dialog">
+    <div class="modal-title">Import Records</div>
+    <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:12px">Choose how to import <strong id="import-count-label">0</strong> records:</p>
+    <div class="import-choice-wrap">
+      <button class="import-choice-btn danger-choice ripple-host" onclick="doImport('overwrite')" aria-label="Overwrite all records">
+        <div class="import-choice-title" style="color:var(--danger)">⚠ Overwrite All</div>
+        <div class="import-choice-desc">Replace all existing records. This cannot be undone.</div>
+      </button>
+      <button class="import-choice-btn ripple-host" onclick="doImport('merge')" aria-label="Merge records">
+        <div class="import-choice-title" style="color:var(--success)">✓ Merge</div>
+        <div class="import-choice-desc">Add imported records, skipping duplicates by ID.</div>
+      </button>
+    </div>
+    <button class="btn btn-secondary ripple-host" onclick="closeModal('modal-import-choice')">Cancel</button>
+  </div>
+</div>
+
+<!-- MODAL: ABOUT -->
+<div class="modal-overlay" id="modal-about" role="dialog" aria-modal="true" aria-label="About Charge Master">
+  <div class="modal-dialog">
+    <div class="about-header">
+      <div class="about-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M16 2L4 16h10l-2 10L24 12H14L16 2z" fill="white"/></svg>
+      </div>
+      <div class="about-app-name">Charge Master</div>
+      <div class="about-version"></div>
+    </div>
+    <div class="about-author-card">
+      <div class="about-avatar">GP</div>
+      <div>
+        <div class="about-author-name">Gianfranco Piazzolla</div>
+        <div class="about-author-tag">Pushing the vibe coding era beyond!</div>
+      </div>
+    </div>
+    <p class="about-desc"><b>Synopsis</b>: Charge Master is a premium Progressive Web App for tracking your vehicle's energy and fuel consumption. Monitor costs, analyze trends, and gain insights across all seasons — whether you drive a BEV or ICE vehicle.</p>
+    <p class="about-desc"><b>GitHub repository</b>: <a href="https://github.com/GianfrancoPiazzolla/Charge-Master" target="_blank" style="color: var(--success);">Charge Master</a></p>
+    <p class="about-desc"><b>More Apps</b>: <a href="https://github.com/GianfrancoPiazzolla" target="_blank" style="color: var(--success);">GitHub</a></p>
+    <p class="about-desc"><b>License</b>: Distributed under the MIT License. Feel free to use, modify, and share.</p>
+    <button class="btn btn-primary ripple-host" onclick="closeModal('modal-about')">Close</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ============================================================
+// CHARGE MASTER — FULL APP LOGIC
+// ============================================================
+
+// --- STATE ---
+const AppState = {
+  records: [],
+  settings: { unit: 'kWh', theme: 'dark', schemaVersion: 1 },
+  activeTab: 'refueling',
+  filter: { mode: 'month', month: new Date().getMonth(), year: new Date().getFullYear(), from: '', to: '' },
+  currentPage: 1,
+  pageSize: 20,
+  pendingImport: null,
+  charts: {},
+};
+
+const STORAGE_RECORDS = 'chargemaster_v1_records';
+const STORAGE_SETTINGS = 'chargemaster_v1_settings';
+const APP_VERSION = '1.0.0';
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// --- PERSIST ---
+function saveRecords() { localStorage.setItem(STORAGE_RECORDS, JSON.stringify(AppState.records)); }
+function saveSettings() { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(AppState.settings)); }
+
+function loadData() {
+  try {
+    const s = localStorage.getItem(STORAGE_SETTINGS);
+    if (s) AppState.settings = { ...AppState.settings, ...JSON.parse(s) };
+  } catch(e) {}
+  try {
+    const r = localStorage.getItem(STORAGE_RECORDS);
+    if (r) AppState.records = JSON.parse(r);
+  } catch(e) {}
+  applyTheme(AppState.settings.theme);
+}
+
+// --- UUID ---
+function uuid() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+// --- THEME ---
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  AppState.settings.theme = t;
+  const isDark = t === 'dark';
+  document.getElementById('icon-sun').style.display = isDark ? 'none' : 'block';
+  document.getElementById('icon-moon').style.display = isDark ? 'block' : 'none';
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) { toggle.classList.toggle('on', !isDark); }
+  const label = document.getElementById('theme-label');
+  if (label) label.textContent = isDark ? '🌙 Dark Mode' : '☀ Light Mode';
+  document.querySelector('meta[name="theme-color"]') && (document.querySelector('meta[name="theme-color"]').content = isDark ? '#0A0E1A' : '#F1F5F9');
+  updateCharts();
+}
+function toggleTheme() {
+  const newTheme = AppState.settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+  saveSettings();
+}
+
+// --- SEASON ---
+function getSeason(month) {
+  if ([11,0,1].includes(month)) return 'winter';
+  if ([2,3,4].includes(month)) return 'spring';
+  if ([5,6,7].includes(month)) return 'summer';
+  return 'autumn';
+}
+const SEASON_COLORS = { winter:'#60A5FA', spring:'#4ADE80', summer:'#FB923C', autumn:'#FBBF24' };
+const SEASON_ICONS = { winter:'❄', spring:'🌱', summer:'☀', autumn:'🍂' };
+
+// --- FILTER ---
+function getFilteredRecords() {
+  const { mode, month, year, from, to } = AppState.filter;
+  return AppState.records.filter(r => {
+    const d = new Date(r.date);
+    if (mode === 'month') return d.getFullYear() === year && d.getMonth() === month;
+    if (mode === 'year') return d.getFullYear() === year;
+    if (mode === 'custom') {
+      if (from && d < new Date(from)) return false;
+      if (to && d > new Date(to)) return false;
+      return true;
+    }
+    return true;
+  }).sort((a,b) => b.date.localeCompare(a.date));
+}
+
+// --- STATS COMPUTE ---
+function computeStats(recs) {
+  if (!recs.length) return null;
+  const prices = recs.map(r => r.unitPrice);
+  const costs = recs.map(r => r.totalCost);
+  const cpkms = recs.map(r => r.costPerKm);
+  const qtys = recs.map(r => r.quantity);
+  const dists = recs.map(r => r.distanceKm);
+  return {
+    count: recs.length,
+    minPrice: Math.min(...prices),
+    avgPrice: prices.reduce((a,b)=>a+b,0)/prices.length,
+    maxPrice: Math.max(...prices),
+    totalCost: costs.reduce((a,b)=>a+b,0),
+    totalDist: dists.reduce((a,b)=>a+b,0),
+    totalQty: qtys.reduce((a,b)=>a+b,0),
+    avgCpkm: cpkms.reduce((a,b)=>a+b,0)/cpkms.length,
+    avgConsumption: recs.reduce((a,r) => a + (r.quantity / r.distanceKm * 100), 0) / recs.length,
+    avgKmPerUnit: dists.reduce((a,b)=>a+b,0) / qtys.reduce((a,b)=>a+b,0),
+  };
+}
+
+// --- UNIT LABELS ---
+function unitLabel() { return AppState.settings.unit === 'kWh' ? 'kWh' : 'L'; }
+function priceLabel() { return `Price per ${unitLabel()} (€)`; }
+function quantityLabel() { return `Quantity (${unitLabel()})`; }
+
+// ==============================
+// RENDER: REFUELING TAB
+// ==============================
+function renderRefueling() {
+  renderSampleBanner();
+  renderSummary();
+  renderRecordList();
+}
+
+function renderSampleBanner() {
+  const hasSample = AppState.records.some(r => r._sample);
+  const wrap = document.getElementById('sample-banner-wrap');
+  if (!hasSample) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="sample-banner">
+    <span>📊 You are viewing sample data. Add your first real record to get started.</span>
+    <button class="sample-banner-close ripple-host" onclick="clearSampleData()" aria-label="Clear sample data">Clear Sample Data</button>
+  </div>`;
+}
+
+function renderSummary() {
+  const wrap = document.getElementById('summary-ribbon-wrap');
+  const total = AppState.records.length;
+  const spent = AppState.records.reduce((a,r) => a + r.totalCost, 0);
+  const dist = AppState.records.reduce((a,r) => a + r.distanceKm, 0);
+  wrap.innerHTML = `<div class="summary-ribbon">
+    <div class="ribbon-item"><div class="ribbon-label">Records</div><div class="ribbon-value">${total}</div></div>
+    <div class="ribbon-item"><div class="ribbon-label">Total Spent</div><div class="ribbon-value">€ ${spent.toFixed(2)}</div></div>
+    <div class="ribbon-item"><div class="ribbon-label">Total Km</div><div class="ribbon-value">${dist.toFixed(0)}</div></div>
+  </div>`;
+}
+
+function renderRecordList() {
+  const list = document.getElementById('records-list');
+  const pagWrap = document.getElementById('pagination-wrap');
+  const sorted = [...AppState.records].sort((a,b) => b.date.localeCompare(a.date));
+
+  if (!sorted.length) {
+    list.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="20" width="60" height="45" rx="6" stroke="currentColor" stroke-width="2"/>
+        <path d="M25 35h30M25 45h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M48 12L36 28h10l-4 18L58 22H48L48 12z" fill="currentColor" opacity=".4"/>
+      </svg>
+      <div class="empty-title">No Refueling Records Yet</div>
+      <div class="empty-sub">Tap the + button to add your first record and start tracking.</div>
+      <button class="empty-cta ripple-host" onclick="openForm()" aria-label="Add first record">+ Add First Record</button>
+    </div>`;
+    pagWrap.innerHTML = '';
+    document.getElementById('fab').classList.add('pulse');
+    return;
+  }
+  document.getElementById('fab').classList.remove('pulse');
+
+  const allCpkm = sorted.map(r => r.costPerKm);
+  const avgCpkm = allCpkm.reduce((a,b)=>a+b,0)/allCpkm.length;
+
+  const totalPages = Math.ceil(sorted.length / AppState.pageSize);
+  if (AppState.currentPage > totalPages) AppState.currentPage = 1;
+  const start = (AppState.currentPage - 1) * AppState.pageSize;
+  const page = sorted.slice(start, start + AppState.pageSize);
+
+  list.innerHTML = page.map((r, i) => {
+    const d = new Date(r.date + 'T00:00:00');
+    const season = getSeason(d.getMonth());
+    const cpkm = r.costPerKm;
+    let badgeClass = 'badge-good';
+    if (cpkm > avgCpkm * 1.2) badgeClass = 'badge-bad';
+    else if (cpkm > avgCpkm) badgeClass = 'badge-mid';
+    const loc = r.location ? `<div class="record-location"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${r.location}</div>` : '';
+    return `<div class="record-card season-${season} ripple-host" style="animation-delay:${i*40}ms" data-id="${r.id}" onclick="handleCardClick(event, '${r.id}')">
+      <div class="record-row">
+        <span class="record-date">${r.date}</span>
+        <span class="cost-badge ${badgeClass}">€ ${cpkm.toFixed(2)}/Km</span>
+      </div>
+      <div class="stat-chips">
+        <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '⚡' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
+        <div class="stat-chip">📍 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
+      </div>
+      <div class="record-row" style="margin-top:4px">
+        <div><span class="record-cost">€${r.totalCost.toFixed(2)}</span><span class="record-unit-price">@ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
+      </div>
+      ${loc}
+      <button class="menu-btn ripple-host" aria-label="Record options" onclick="toggleMenu(event,'${r.id}')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+
+  // pagination
+  if (totalPages <= 1) { pagWrap.innerHTML = ''; return; }
+  let pages = '';
+  for (let p = 1; p <= totalPages; p++) {
+    pages += `<button class="page-btn${p===AppState.currentPage?' active':''} ripple-host" onclick="goPage(${p})" aria-label="Page ${p}">${p}</button>`;
+  }
+  pagWrap.innerHTML = `<div class="pagination">${pages}<span class="page-info">${start+1}–${Math.min(start+AppState.pageSize,sorted.length)} of ${sorted.length}</span></div>`;
+}
+
+function goPage(p) { AppState.currentPage = p; renderRecordList(); }
+
+function handleCardClick(e, id) {
+  if (e.target.closest('.menu-btn') || e.target.closest('.dropdown')) return;
+  openForm(id);
+}
+
+let openDropdownId = null;
+function toggleMenu(e, id) {
+  e.stopPropagation();
+  const existing = document.querySelector('.dropdown');
+  if (existing) { existing.remove(); openDropdownId = null; if (openDropdownId === id) return; }
+  openDropdownId = id;
+  const card = document.querySelector(`[data-id="${id}"]`);
+  const dropdown = document.createElement('div');
+  dropdown.className = 'dropdown';
+  dropdown.setAttribute('role', 'menu');
+  dropdown.innerHTML = `
+    <div class="dropdown-item ripple-host" role="menuitem" onclick="openForm('${id}');this.closest('.dropdown').remove()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit
+    </div>
+    <div class="dropdown-item danger ripple-host" role="menuitem" onclick="deleteRecord('${id}');this.closest('.dropdown').remove()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg> Delete
+    </div>`;
+  card.appendChild(dropdown);
+  setTimeout(() => document.addEventListener('click', () => { dropdown.remove(); openDropdownId = null; }, {once:true}), 0);
+}
+
+function clearSampleData() {
+  AppState.records = AppState.records.filter(r => !r._sample);
+  saveRecords();
+  renderRefueling();
+  showToast('Sample data cleared', 'success');
+}
+
+// ==============================
+// FORM
+// ==============================
+function openForm(id) {
+  closeOpenDropdowns();
+  const form = document.getElementById('refuel-form');
+  form.reset();
+  document.getElementById('computed-total').textContent = '—';
+  document.getElementById('computed-cpkm').textContent = '—';
+  document.getElementById('delete-confirm-wrap').innerHTML = '';
+  document.getElementById('btn-delete-record').style.display = 'none';
+  document.getElementById('notes-count').textContent = '0';
+  document.querySelectorAll('.form-input').forEach(i => i.classList.remove('error','valid'));
+
+  // default date
+  document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
+
+  const u = unitLabel();
+  document.getElementById('label-quantity').textContent = `Quantity (${u})`;
+  document.getElementById('label-price').textContent = `Price per ${u} (€)`;
+
+  if (id) {
+    const rec = AppState.records.find(r => r.id === id);
+    if (rec) {
+      document.getElementById('form-modal-title').textContent = 'Edit Record';
+      document.getElementById('field-id').value = rec.id;
+      document.getElementById('field-date').value = rec.date;
+      document.getElementById('field-distance').value = rec.distanceKm;
+      document.getElementById('field-quantity').value = rec.quantity;
+      document.getElementById('field-price').value = rec.unitPrice;
+      document.getElementById('field-location').value = rec.location || '';
+      document.getElementById('field-notes').value = rec.notes || '';
+      document.getElementById('notes-count').textContent = (rec.notes || '').length;
+      updateComputed();
+      document.getElementById('btn-delete-record').style.display = 'flex';
+    }
+  } else {
+    document.getElementById('form-modal-title').textContent = 'Add Refueling Record';
+    document.getElementById('field-id').value = '';
+  }
+  openModal('modal-form');
+}
+
+function closeForm() { closeModal('modal-form'); }
+
+function updateComputed() {
+  const qty = parseFloat(document.getElementById('field-quantity').value) || 0;
+  const price = parseFloat(document.getElementById('field-price').value) || 0;
+  const dist = parseFloat(document.getElementById('field-distance').value) || 0;
+  const total = qty * price;
+  const cpkm = dist > 0 ? total / dist : 0;
+  document.getElementById('computed-total').textContent = total > 0 ? `€ ${total.toFixed(2)}` : '—';
+  document.getElementById('computed-cpkm').textContent = cpkm > 0 ? `€ ${cpkm.toFixed(2)}` : '—';
+}
+
+['field-quantity','field-price','field-distance'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateComputed);
+});
+document.getElementById('field-notes').addEventListener('input', function() {
+  document.getElementById('notes-count').textContent = this.value.length;
+});
+
+function validateForm() {
+  let valid = true;
+  const fields = [
+    { el: document.getElementById('field-date'), check: v => v !== '' },
+    { el: document.getElementById('field-distance'), check: v => parseFloat(v) > 0 },
+    { el: document.getElementById('field-quantity'), check: v => parseFloat(v) > 0 },
+    { el: document.getElementById('field-price'), check: v => parseFloat(v) > 0 },
+  ];
+  fields.forEach(({el, check}) => {
+    const ok = check(el.value);
+    el.classList.toggle('error', !ok);
+    el.classList.toggle('valid', ok);
+    if (!ok) { el.classList.add('shake'); el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true}); valid = false; }
+  });
+  return valid;
+}
+
+document.getElementById('refuel-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!validateForm()) return;
+  const id = document.getElementById('field-id').value;
+  const qty = parseFloat(document.getElementById('field-quantity').value);
+  const price = parseFloat(document.getElementById('field-price').value);
+  const dist = parseFloat(document.getElementById('field-distance').value);
+  const total = qty * price;
+  const cpkm = total / dist;
+  const now = new Date().toISOString();
+  if (id) {
+    const idx = AppState.records.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      AppState.records[idx] = { ...AppState.records[idx],
+        date: document.getElementById('field-date').value,
+        distanceKm: dist, quantity: qty, unitPrice: price,
+        totalCost: total, costPerKm: cpkm,
+        location: document.getElementById('field-location').value.trim() || null,
+        notes: document.getElementById('field-notes').value.trim() || null,
+        updatedAt: now,
+      };
+    }
+    showToast('Record updated', 'success');
+  } else {
+    AppState.records.push({
+      id: uuid(),
+      date: document.getElementById('field-date').value,
+      distanceKm: dist, quantity: qty, unitPrice: price,
+      totalCost: total, costPerKm: cpkm,
+      location: document.getElementById('field-location').value.trim() || null,
+      notes: document.getElementById('field-notes').value.trim() || null,
+      createdAt: now, updatedAt: now,
+    });
+    showToast('Record saved', 'success');
+  }
+  saveRecords();
+  if (navigator.vibrate) navigator.vibrate(50);
+  closeForm();
+  AppState.currentPage = 1;
+  renderAll();
+});
+
+function showDeleteConfirm() {
+  const wrap = document.getElementById('delete-confirm-wrap');
+  wrap.innerHTML = `<div class="confirm-inline">
+    ⚠ Are you sure? This cannot be undone.
+    <div class="cta-btns">
+      <button class="confirm-yes ripple-host" onclick="confirmDelete()">Yes, Delete</button>
+      <button class="confirm-no ripple-host" onclick="document.getElementById('delete-confirm-wrap').innerHTML=''">No</button>
+    </div>
+  </div>`;
+}
+
+function confirmDelete() {
+  const id = document.getElementById('field-id').value;
+  deleteRecord(id);
+  closeForm();
+}
+
+function deleteRecord(id) {
+  AppState.records = AppState.records.filter(r => r.id !== id);
+  saveRecords();
+  if (navigator.vibrate) navigator.vibrate([50,30,50]);
+  showToast('Record deleted', 'warning');
+  renderAll();
+}
+
+// ==============================
+// RENDER: STATISTICS TAB
+// ==============================
+function renderStatistics() {
+  renderStatsFilter();
+  renderStatsContent();
+}
+
+function renderStatsFilter() {
+  const wrap = document.getElementById('stats-filter-bar');
+  const { mode, month, year, from, to } = AppState.filter;
+  const recs = getFilteredRecords();
+
+  const yearOpts = getYears().map(y => `<option value="${y}" ${y===year?'selected':''}>${y}</option>`).join('');
+  const monthOpts = MONTHS.map((m,i) => `<option value="${i}" ${i===month?'selected':''}>${m}</option>`).join('');
+
+  let filterControls = '';
+  if (mode === 'month') {
+    filterControls = `<div class="filter-inputs">
+      <select class="filter-select" onchange="setFilterMonth(this.value)" aria-label="Select month">${monthOpts}</select>
+      <select class="filter-select" onchange="setFilterYear(this.value)" aria-label="Select year">${yearOpts}</select>
+    </div>`;
+  } else if (mode === 'year') {
+    filterControls = `<div class="filter-inputs"><select class="filter-select" onchange="setFilterYear(this.value)" aria-label="Select year">${yearOpts}</select></div>`;
+  } else {
+    filterControls = `<div class="filter-inputs">
+      <input type="date" class="filter-input" value="${from}" onchange="setFilterFrom(this.value)" aria-label="From date">
+      <input type="date" class="filter-input" value="${to}" onchange="setFilterTo(this.value)" aria-label="To date">
+    </div>`;
+  }
+
+  wrap.innerHTML = `<div class="filter-bar">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-family:var(--font-display);font-size:var(--text-base);font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Filter</span>
+      <span style="background:var(--accent-primary);color:#fff;border-radius:20px;padding:2px 10px;font-size:var(--text-xs);font-family:var(--font-mono)">${recs.length} records</span>
+    </div>
+    <div class="segmented">
+      <button class="seg-btn${mode==='month'?' active':''} ripple-host" onclick="setFilterMode('month')" aria-label="Filter by month">Month</button>
+      <button class="seg-btn${mode==='year'?' active':''} ripple-host" onclick="setFilterMode('year')" aria-label="Filter by year">Year</button>
+      <button class="seg-btn${mode==='custom'?' active':''} ripple-host" onclick="setFilterMode('custom')" aria-label="Custom range">Custom</button>
+    </div>
+    ${filterControls}
+  </div>`;
+}
+
+function setFilterMode(m) { AppState.filter.mode = m; renderStatistics(); renderCharts(); }
+function setFilterMonth(v) { AppState.filter.month = parseInt(v); renderStatistics(); renderCharts(); }
+function setFilterYear(v) { AppState.filter.year = parseInt(v); renderStatistics(); renderCharts(); }
+function setFilterFrom(v) { AppState.filter.from = v; renderStatistics(); renderCharts(); }
+function setFilterTo(v) { AppState.filter.to = v; renderStatistics(); renderCharts(); }
+
+function getYears() {
+  const yrs = new Set(AppState.records.map(r => new Date(r.date).getFullYear()));
+  yrs.add(new Date().getFullYear());
+  return [...yrs].sort((a,b) => b-a);
+}
+
+function animVal(val, type) {
+  // Returns a formatted placeholder; animateNumbers() will animate to the real value
+  if (type === 'price') return val.toFixed(4);
+  return val.toFixed(2);
+}
+
+function renderStatsContent() {
+  const recs = getFilteredRecords();
+  const stats = computeStats(recs);
+  const wrap = document.getElementById('stats-content');
+
+  if (!stats) {
+    wrap.innerHTML = `<div class="empty-state" style="min-height:200px">
+      <svg viewBox="0 0 80 80" fill="none"><rect x="10" y="30" width="14" height="30" rx="3" fill="currentColor" opacity=".2"/><rect x="33" y="20" width="14" height="40" rx="3" fill="currentColor" opacity=".3"/><rect x="56" y="10" width="14" height="50" rx="3" fill="currentColor" opacity=".4"/></svg>
+      <div class="empty-title">No Data</div><div class="empty-sub">No records match the current filter.</div>
+    </div>`;
+    return;
+  }
+
+  // PRIMARY CARDS
+  const primaryCards = `<div class="stats-grid-3">
+    ${statCard('Min Price', `€${animVal(stats.minPrice,'price')}`, `/${unitLabel()}`, '▼', 'var(--success)', 'min-price')}
+    ${statCard('Avg Price', `€${animVal(stats.avgPrice,'price')}`, `/${unitLabel()}`, '≈', 'var(--warning)', 'avg-price')}
+    ${statCard('Max Price', `€${animVal(stats.maxPrice,'price')}`, `/${unitLabel()}`, '▲', 'var(--danger)', 'max-price')}
+  </div>`;
+
+  // SEASONAL
+  const seasons = ['winter','spring','summer','autumn'];
+  const seasonalCards = seasons.map(s => {
+    const sRecs = recs.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth()) === s);
+    const sStats = computeStats(sRecs);
+    const months = {winter:'Dec, Jan, Feb', spring:'Mar, Apr, May', summer:'Jun, Jul, Aug', autumn:'Sep, Oct, Nov'};
+    const inner = sStats ? `<div class="season-stats">
+      <div class="season-stat"><div class="season-stat-label">Min</div><div class="season-stat-value" style="color:var(--success)">€ ${sStats.minPrice.toFixed(2)}</div></div>
+      <div class="season-stat"><div class="season-stat-label">Avg</div><div class="season-stat-value" style="color:var(--warning)">€ ${sStats.avgPrice.toFixed(2)}</div></div>
+      <div class="season-stat"><div class="season-stat-label">Max</div><div class="season-stat-value" style="color:var(--danger)">€ ${sStats.maxPrice.toFixed(2)}</div></div>
+    </div>` : `<p style="font-size:var(--text-sm);color:var(--text-muted)">No data for this season in the selected period.</p>`;
+    return `<div class="season-card" id="season-card-${s}">
+      <div class="season-hdr ripple-host" onclick="toggleSeason('${s}')" role="button" aria-expanded="false">
+        <span class="season-icon">${SEASON_ICONS[s]}</span>
+        <span class="season-name" style="color:${SEASON_COLORS[s]}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>
+        <span style="font-size:var(--text-xs);color:var(--text-muted);margin-right:8px">${months[s]}</span>
+        <svg class="season-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="season-body">${inner}</div>
+    </div>`;
+  }).join('');
+
+  // EXTRA CARDS
+  const extraCards = `<div class="stats-grid-2">
+    ${statCard2('Total Records', stats.count, '', '📋')}
+    ${statCard2('Total Distance', stats.totalDist.toFixed(1), ' Km', '🛣')}
+    ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💰')}
+    ${statCard2(AppState.settings.unit==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), AppState.settings.unit==='kWh'?'⚡':'⛽')}
+    ${statCard2('Efficiency', stats.avgKmPerUnit.toFixed(2), ` Km/${unitLabel()}`, AppState.settings.unit==='kWh'?'⚡':'⛽')}
+    ${statCard2('Average Consumption', stats.avgConsumption.toFixed(2), ` ${unitLabel()}/100Km`, '📈')}
+    ${statCard2('Average Cost/Km', '€ '+stats.avgCpkm.toFixed(2), '/Km', '📊')}
+  </div>`;
+
+  wrap.innerHTML = primaryCards +
+    `<div class="section-hdr"><span class="section-title">🍂 Seasonal Breakdown</span></div>` +
+    seasonalCards +
+    `<div class="section-hdr"><span class="section-title">📊 Additional Stats</span></div>` +
+    extraCards;
+
+  // animate numbers
+  animateNumbers(stats);
+}
+
+function statCard(label, val, sub, icon, color, id) {
+  return `<div class="stat-card">
+    <div class="stat-card-label"><span>${icon}</span>${label}</div>
+    <div class="stat-card-value" style="color:${color}" id="sc-${id}">€ —</div>
+    <div class="stat-card-sub">${sub}</div>
+  </div>`;
+}
+function statCard2(label, val, sub, icon) {
+  return `<div class="stat-card">
+    <div class="stat-card-label"><span>${icon}</span> ${label}</div>
+    <div class="stat-card-value" style="color:var(--accent-primary)">${val}</div>
+    <div class="stat-card-sub">${sub}</div>
+  </div>`;
+}
+
+function animateNumbers(stats) {
+  const duration = 600;
+  const easeOutCubic = t => 1 - Math.pow(1-t, 3);
+  const pairs = [
+    ['sc-min-price', stats.minPrice, 2],
+    ['sc-avg-price', stats.avgPrice, 2],
+    ['sc-max-price', stats.maxPrice, 2],
+  ];
+  pairs.forEach(([id, target, dec]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min((now-start)/duration, 1);
+      el.textContent = '€ ' + (target * easeOutCubic(t)).toFixed(dec);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function toggleSeason(s) {
+  const card = document.getElementById(`season-card-${s}`);
+  card.classList.toggle('open');
+  const hdr = card.querySelector('.season-hdr');
+  hdr.setAttribute('aria-expanded', card.classList.contains('open'));
+}
+
+// ==============================
+// RENDER: CHARTS TAB
+// ==============================
+function renderCharts() {
+  const wrap = document.getElementById('charts-content');
+  wrap.innerHTML = `
+    <div class="chart-card"><div class="chart-title">Unit Price Over Time</div><div class="chart-wrap"><canvas id="chart-price"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Cost per Km Over Time</div><div class="chart-wrap"><canvas id="chart-cpkm"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Distance Over Time</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Monthly Total Expenditure</div><div class="chart-wrap-tall"><canvas id="chart-monthly"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Average Price by Season</div><div class="chart-wrap"><canvas id="chart-season"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Spending by Season</div><div class="chart-wrap"><canvas id="chart-donut-season"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Refueling Frequency by Month</div><div class="chart-wrap"><canvas id="chart-donut-month"></canvas></div></div>
+  `;
+  const recs = getFilteredRecords();
+  const isDark = AppState.settings.theme === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94A3B8' : '#475569';
+  const fontFamily = "'Rajdhani', sans-serif";
+
+  const baseOpts = (title) => ({
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 800, easing: 'easeInOutQuart' },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: isDark ? '#1E2435' : '#fff',
+        titleColor: isDark ? '#F1F5F9' : '#0F172A',
+        bodyColor: textColor,
+        borderColor: 'rgba(59,130,246,0.3)', borderWidth: 1,
+        padding: 10, cornerRadius: 8,
+        titleFont: { family: fontFamily, weight: 700 },
+        bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
+      }
+    },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: fontFamily, size: 11 } } },
+      y: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: "'JetBrains Mono', monospace", size: 11 } } }
+    }
+  });
+
+  const sorted = [...recs].sort((a,b) => a.date.localeCompare(b.date));
+
+  // CHART 1: Price over time
+  destroyChart('chart-price');
+  if (sorted.length) {
+    const labels = sorted.map(r => r.date.slice(5));
+    const prices = sorted.map(r => r.unitPrice);
+    const ma = prices.map((_, i) => { const sl = prices.slice(Math.max(0,i-2),i+3); return sl.reduce((a,b)=>a+b,0)/sl.length; });
+    const ctx1 = document.getElementById('chart-price').getContext('2d');
+    const grad1 = ctx1.createLinearGradient(0,0,0,200);
+    grad1.addColorStop(0, 'rgba(59,130,246,0.4)'); grad1.addColorStop(1, 'rgba(59,130,246,0)');
+    AppState.charts['chart-price'] = new Chart(ctx1, { type:'line', data: {
+      labels, datasets: [
+        { label:'Price', data:prices, borderColor:'#3B82F6', backgroundColor:grad1, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#3B82F6' },
+        { label:'Moving Avg', data:ma, borderColor:'#06B6D4', borderDash:[4,4], fill:false, tension:0.4, pointRadius:0 }
+      ]
+    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` €${ctx.raw.toFixed(4)}/${unitLabel()}` } } } } });
+  }
+
+  // CHART 2: Cost per Km
+  destroyChart('chart-cpkm');
+  if (sorted.length) {
+    const labels2 = sorted.map(r => r.date.slice(5));
+    const cpkms = sorted.map(r => r.costPerKm);
+    const avgLine = cpkms.reduce((a,b)=>a+b,0)/cpkms.length;
+    const ctx2 = document.getElementById('chart-cpkm').getContext('2d');
+    const grad2 = ctx2.createLinearGradient(0,0,0,200);
+    grad2.addColorStop(0,'rgba(6,182,212,0.35)'); grad2.addColorStop(1,'rgba(6,182,212,0)');
+    AppState.charts['chart-cpkm'] = new Chart(ctx2, { type:'line', data: {
+      labels: labels2, datasets: [
+        { label:'Cost/Km', data:cpkms, borderColor:'#06B6D4', backgroundColor:grad2, fill:true, tension:0.4, pointRadius:3 },
+        { label:'Average', data: Array(cpkms.length).fill(avgLine), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
+      ]
+    }, options: baseOpts() });
+  }
+
+  // CHART 3: Distance Over Time
+  destroyChart('chart-distance');
+  if (sorted.length) {
+    const labels3 = sorted.map(r => r.date.slice(5));
+    const dists = sorted.map(r => r.distanceKm);
+    const avgDist = dists.reduce((a,b)=>a+b,0)/dists.length;
+    const ctx3 = document.getElementById('chart-distance').getContext('2d');
+    const grad3 = ctx3.createLinearGradient(0,0,0,200);
+    grad3.addColorStop(0,'rgba(16,185,129,0.35)'); grad3.addColorStop(1,'rgba(16,185,129,0)');
+    AppState.charts['chart-distance'] = new Chart(ctx3, { type:'line', data: {
+      labels: labels3, datasets: [
+        { label:'Distance (Km)', data:dists, borderColor:'#10B981', backgroundColor:grad3, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#10B981' },
+        { label:'Average', data: Array(dists.length).fill(avgDist), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
+      ]
+    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(1)} Km` } } } } });
+  }
+
+  // CHART 3: Monthly Expenditure (horizontal bar)
+  destroyChart('chart-monthly');
+  const monthly = {};
+  AppState.records.forEach(r => {
+    const d = new Date(r.date+'T00:00:00');
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthly[key] = (monthly[key]||0) + r.totalCost;
+  });
+  const mKeys = Object.keys(monthly).sort();
+  if (mKeys.length) {
+    const mColors = mKeys.map(k => { const m = parseInt(k.split('-')[1])-1; return SEASON_COLORS[getSeason(m)]; });
+    AppState.charts['chart-monthly'] = new Chart(document.getElementById('chart-monthly'), { type:'bar', data: {
+      labels: mKeys.map(k => { const [y,m]=k.split('-'); return MONTHS[parseInt(m)-1].slice(0,3)+' '+y.slice(2); }),
+      datasets: [{ data: mKeys.map(k=>monthly[k]), backgroundColor: mColors, borderRadius: 6 }]
+    }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:false} } } });
+  }
+
+  // CHART 4: Season grouped bar
+  destroyChart('chart-season');
+  const seasons = ['winter','spring','summer','autumn'];
+  const seaStats = seasons.map(s => computeStats(AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s)));
+  AppState.charts['chart-season'] = new Chart(document.getElementById('chart-season'), { type:'bar', data: {
+    labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
+    datasets: [
+      { label:'Min', data: seaStats.map(s=>s?s.minPrice:0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
+      { label:'Avg', data: seaStats.map(s=>s?s.avgPrice:0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
+      { label:'Max', data: seaStats.map(s=>s?s.maxPrice:0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
+    ]
+  }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}} } } });
+
+  // CHART 5: Donut season spending
+  destroyChart('chart-donut-season');
+  const seaCosts = seasons.map(s => AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s).reduce((a,r)=>a+r.totalCost,0));
+  const totalSpent = seaCosts.reduce((a,b)=>a+b,0);
+  AppState.charts['chart-donut-season'] = new Chart(document.getElementById('chart-donut-season'), { type:'doughnut', data: {
+    labels: seasons.map(s=>s.charAt(0).toUpperCase()+s.slice(1)),
+    datasets: [{ data: seaCosts, backgroundColor: seasons.map(s=>SEASON_COLORS[s]), borderWidth:0, hoverOffset:8 }]
+  }, options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
+    animation:{duration:800,easing:'easeInOutQuart'},
+    plugins: { legend:{display:true,position:'bottom',labels:{color:textColor,font:{family:fontFamily},padding:12}},
+      tooltip:{ backgroundColor: isDark?'#1E2435':'#fff', titleColor:isDark?'#F1F5F9':'#0F172A', bodyColor:textColor, borderColor:'rgba(59,130,246,0.3)',borderWidth:1,padding:10,cornerRadius:8,
+        callbacks:{label:(ctx)=>` €${ctx.raw.toFixed(2)} (${totalSpent>0?(ctx.raw/totalSpent*100).toFixed(1):0}%)`} }
+    }
+  } });
+
+  // CHART 6: Donut monthly frequency
+  destroyChart('chart-donut-month');
+  const mCounts = Array.from({length:12},(_,m) => AppState.records.filter(r=>new Date(r.date+'T00:00:00').getMonth()===m).length);
+  const mGrad = Array.from({length:12},(_,i) => `hsl(${200+i*12},70%,${50-i*2}%)`);
+  AppState.charts['chart-donut-month'] = new Chart(document.getElementById('chart-donut-month'), { type:'doughnut', data: {
+    labels: MONTHS.map(m=>m.slice(0,3)),
+    datasets: [{ data: mCounts, backgroundColor: mGrad, borderWidth:0, hoverOffset:8 }]
+  }, options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
+    animation:{duration:800,easing:'easeInOutQuart'},
+    plugins: { legend:{display:true,position:'bottom',labels:{color:textColor,font:{family:fontFamily,size:10},padding:8}},
+      tooltip:{ backgroundColor:isDark?'#1E2435':'#fff', titleColor:isDark?'#F1F5F9':'#0F172A', bodyColor:textColor, borderColor:'rgba(59,130,246,0.3)',borderWidth:1,padding:10,cornerRadius:8 }
+    }
+  } });
+}
+
+function destroyChart(id) {
+  if (AppState.charts[id]) { AppState.charts[id].destroy(); delete AppState.charts[id]; }
+}
+function updateCharts() { if (AppState.activeTab === 'charts') renderCharts(); }
+
+// ==============================
+// MODALS
+// ==============================
+function openModal(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'flex';
+  requestAnimationFrame(() => el.classList.add('open'));
+  el.addEventListener('click', (e) => { if (e.target === el) closeModal(id); }, {once:false});
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('open');
+  setTimeout(() => { el.style.display = ''; }, 220);
+}
+
+function openSettings() {
+  const s = AppState.settings;
+  document.getElementById('pill-kwh').classList.toggle('active', s.unit==='kWh');
+  document.getElementById('pill-l').classList.toggle('active', s.unit==='L');
+  const toggle = document.getElementById('theme-toggle');
+  toggle.classList.toggle('on', s.theme==='light');
+  document.getElementById('theme-label').textContent = s.theme==='dark' ? '🌙 Dark Mode' : '☀ Light Mode';
+  openModal('modal-settings');
+}
+function openAbout() { openModal('modal-about'); }
+
+// ==============================
+// SETTINGS ACTIONS
+// ==============================
+function setUnit(u) {
+  AppState.settings.unit = u;
+  saveSettings();
+  document.getElementById('pill-kwh').classList.toggle('active', u==='kWh');
+  document.getElementById('pill-l').classList.toggle('active', u==='L');
+  showToast(`Unit set to ${u}`, 'success');
+  renderAll();
+}
+
+function exportRecords() {
+  const date = new Date().toISOString().split('T')[0];
+  const data = { exportedAt: new Date().toISOString(), appVersion: APP_VERSION, recordCount: AppState.records.length, unit: AppState.settings.unit, records: AppState.records };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `chargemaster_export_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Export complete', 'success');
+}
+
+function triggerImport() { document.getElementById('import-file-input').click(); }
+
+function handleImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      let recs = Array.isArray(data) ? data : data.records;
+      if (!Array.isArray(recs)) throw new Error('Invalid format');
+      const valid = recs.filter(r => r.id && r.date && r.distanceKm !== undefined && r.quantity !== undefined && r.unitPrice !== undefined);
+      if (!valid.length) throw new Error('No valid records found');
+      AppState.pendingImport = valid;
+      document.getElementById('import-count-label').textContent = valid.length;
+      closeModal('modal-settings');
+      setTimeout(() => openModal('modal-import-choice'), 250);
+    } catch(err) {
+      showToast('Import failed: ' + err.message, 'error');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function showDeleteAllConfirm() {
+  const wrap = document.getElementById('delete-all-confirm-wrap');
+  if (wrap.innerHTML) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <div class="confirm-inline">
+      <span>⚠ Delete all refueling records? This cannot be undone.</span>
+      <div class="cta-btns">
+        <button class="confirm-yes" onclick="deleteAllRecords()">Delete All</button>
+        <button class="confirm-no" onclick="document.getElementById('delete-all-confirm-wrap').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+}
+
+function deleteAllRecords() {
+  AppState.records = [];
+  saveRecords();
+  document.getElementById('delete-all-confirm-wrap').innerHTML = '';
+  closeModal('modal-settings');
+  renderAll();
+  showToast('All records deleted', 'success');
+}
+
+function doImport(mode) {
+  const imp = AppState.pendingImport;
+  if (!imp) return;
+  if (mode === 'overwrite') {
+    AppState.records = imp;
+    showToast(`Imported ${imp.length} records (overwrite)`, 'success');
+  } else {
+    const existing = new Set(AppState.records.map(r=>r.id));
+    const newRecs = imp.filter(r=>!existing.has(r.id));
+    AppState.records = [...AppState.records, ...newRecs];
+    showToast(`Merged ${newRecs.length} new records`, 'success');
+  }
+  AppState.pendingImport = null;
+  saveRecords();
+  closeModal('modal-import-choice');
+  renderAll();
+}
+
+// ==============================
+// TOAST
+// ==============================
+const toasts = [];
+function showToast(msg, type='success') {
+  const icons = { success:'✓', error:'✕', warning:'⚠' };
+  const container = document.getElementById('toast-container');
+  while (toasts.length >= 3) { const old = toasts.shift(); old.remove(); }
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  toasts.push(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    el.addEventListener('animationend', () => { el.remove(); const idx=toasts.indexOf(el); if(idx>-1) toasts.splice(idx,1); }, {once:true});
+  }, 3000);
+}
+
+// ==============================
+// TAB NAVIGATION
+// ==============================
+function switchTab(name) {
+  if (AppState.activeTab === name) return;
+  const old = document.getElementById(`panel-${AppState.activeTab}`);
+  old.classList.add('exit-left');
+  setTimeout(() => { old.classList.remove('active','exit-left'); }, 280);
+
+  AppState.activeTab = name;
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.getElementById(`tab-${name}`).setAttribute('aria-selected','true');
+
+  const panel = document.getElementById(`panel-${name}`);
+  panel.classList.add('active');
+
+  if (name === 'statistics') renderStatistics();
+  else if (name === 'charts') renderCharts();
+}
+
+function scrollToTop() {
+  document.getElementById(`panel-${AppState.activeTab}`).scrollTop = 0;
+}
+
+// ==============================
+// SWIPE GESTURE
+// ==============================
+let touchStartX = 0, touchStartY = 0;
+document.getElementById('app-content').addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, {passive:true});
+document.getElementById('app-content').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+  if (Math.abs(dx) > 50 && dy < 60) {
+    const tabs = ['refueling','statistics','charts'];
+    const idx = tabs.indexOf(AppState.activeTab);
+    if (dx < 0 && idx < tabs.length-1) switchTab(tabs[idx+1]);
+    if (dx > 0 && idx > 0) switchTab(tabs[idx-1]);
+  }
+}, {passive:true});
+
+// ==============================
+// CLOSE DROPDOWNS
+// ==============================
+function closeOpenDropdowns() { document.querySelectorAll('.dropdown').forEach(d=>d.remove()); openDropdownId=null; }
+
+// ==============================
+// RENDER ALL
+// ==============================
+function renderAll() {
+  renderRefueling();
+  if (AppState.activeTab === 'statistics') renderStatistics();
+  if (AppState.activeTab === 'charts') renderCharts();
+}
+
+// ==============================
+// SAMPLE DATA
+// ==============================
+function generateSampleData() {
+  const now = new Date();
+  const recs = [];
+  for (let i = 23; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 10+Math.floor(Math.random()*10));
+    const month = d.getMonth();
+    const season = getSeason(month);
+    const basePrices = { winter:0.28, spring:0.24, summer:0.22, autumn:0.26 };
+    const basePrice = basePrices[season] + (Math.random()-0.5)*0.04;
+    const dist = 250 + Math.random()*200;
+    const qty = dist * (AppState.settings.unit==='kWh' ? 0.18 : 0.065) * (0.9+Math.random()*0.2);
+    const total = qty * basePrice;
+    const dateStr = d.toISOString().split('T')[0];
+    const now2 = new Date().toISOString();
+    recs.push({
+      id: uuid(), date: dateStr, distanceKm: parseFloat(dist.toFixed(1)),
+      quantity: parseFloat(qty.toFixed(2)), unitPrice: parseFloat(basePrice.toFixed(4)),
+      totalCost: parseFloat(total.toFixed(2)), costPerKm: parseFloat((total/dist).toFixed(4)),
+      location: ['Shell Station A1','ENI Via Roma','Q8 Highway','Agip SS1','Tamoil Centro'][Math.floor(Math.random()*5)],
+      notes: null, createdAt: now2, updatedAt: now2, _sample: true
+    });
+  }
+  return recs;
+}
+
+// ==============================
+// PWA: MANIFEST + SW
+// ==============================
+function initPWA() {
+  // Manifest
+  const manifest = {
+    name: 'Charge Master',
+    short_name: 'ChargeMaster',
+    description: 'Vehicle Fuel & Energy Consumption Tracker',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#0A0E1A',
+    theme_color: '#3B82F6',
+    orientation: 'portrait-primary',
+    icons: [
+      { src: genIcon(192), sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: genIcon(512), sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'chargemaster-v1';
+self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./',location.pathname]))); });
+self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
+self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))); });
+    `;
+    const swBlob = new Blob([swCode], {type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+  }
+}
+
+function genIcon(size) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,size,size);
+  grad.addColorStop(0,'#3B82F6'); grad.addColorStop(1,'#06B6D4');
+  ctx.fillStyle = grad;
+  const r = size * 0.15;
+  ctx.beginPath(); ctx.moveTo(r,0); ctx.lineTo(size-r,0); ctx.quadraticCurveTo(size,0,size,r);
+  ctx.lineTo(size,size-r); ctx.quadraticCurveTo(size,size,size-r,size);
+  ctx.lineTo(r,size); ctx.quadraticCurveTo(0,size,0,size-r);
+  ctx.lineTo(0,r); ctx.quadraticCurveTo(0,0,r,0); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  const s = size * 0.35, ox = size/2 - s*0.35, oy = size/2 - s*0.6;
+  ctx.beginPath();
+  ctx.moveTo(ox+s*0.7, oy);
+  ctx.lineTo(ox, oy+s*0.7);
+  ctx.lineTo(ox+s*0.45, oy+s*0.7);
+  ctx.lineTo(ox+s*0.3, oy+s*1.3);
+  ctx.lineTo(ox+s, oy+s*0.55);
+  ctx.lineTo(ox+s*0.55, oy+s*0.55);
+  ctx.closePath(); ctx.fill();
+  return canvas.toDataURL('image/png');
+}
+
+// ==============================
+// THEME META
+// ==============================
+function addThemeMeta() {
+  const meta = document.createElement('meta');
+  meta.name = 'theme-color';
+  meta.content = '#0A0E1A';
+  document.head.appendChild(meta);
+}
+
+// ==============================
+// INIT
+// ==============================
+(function init() {
+  addThemeMeta();
+  loadData();
+  applyTheme(AppState.settings.theme);
+
+  // Seed sample data if first launch
+  if (!AppState.records.length) {
+    //AppState.records = generateSampleData();
+    //saveRecords();
+  }
+
+  initPWA();
+  renderAll();
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').then(function(registration) {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>

@@ -157,7 +157,7 @@ All charts feature:
 │  ┌──────────────────────────────────────┐    │
 │  │ ❄ 2024-12-15          🟢 €0.14/Km   │    │  ← Record card (season-colored border)
 │  │ 320 Km  |  55 kWh  |  €0.25/kWh      │    │
-│  │ € 13.75         Shell Station A1 📍   │   │
+│  │ € 13.75         Shell Station A1 📍   │    │
 │  └──────────────────────────────────────┘    │
 │                                              │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination

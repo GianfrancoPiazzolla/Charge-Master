@@ -1577,10 +1577,10 @@ function renderCharts() {
     grad2.addColorStop(0,'rgba(6,182,212,0.35)'); grad2.addColorStop(1,'rgba(6,182,212,0)');
     AppState.charts['chart-cpkm'] = new Chart(ctx2, { type:'line', data: {
       labels: labels2, datasets: [
-        { label:'Cost/Km (€)', data:cpkms, borderColor:'#06B6D4', backgroundColor:grad2, fill:true, tension:0.4, pointRadius:3 },
+        { label:'Cost/Km', data:cpkms, borderColor:'#06B6D4', backgroundColor:grad2, fill:true, tension:0.4, pointRadius:3 },
         { label:'Average', data: Array(cpkms.length).fill(avgLine), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
       ]
-    }, options: baseOpts() });
+   }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}` } } } } });
   }
 
   // CHART 3: Distance Over Time

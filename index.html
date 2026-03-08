@@ -29,7 +29,7 @@
   --danger: #EF4444;
   --border-subtle: rgba(255,255,255,0.08);
   --border-active: rgba(59,130,246,0.6);
-  --text-xs: 11px;
+  --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 15px;
   --text-lg: 18px;
@@ -275,6 +275,7 @@ html, body {
 .record-cost { font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 700; color: var(--text-primary); }
 .record-unit-price { font-size: var(--text-xs); color: var(--text-muted); margin-left: 8px; }
 .record-location { font-size: var(--text-xs); color: var(--text-secondary); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.note-icon { margin-left: auto; font-size: 14px; line-height: 1; flex-shrink: 0; }
 
 .menu-btn {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
@@ -744,6 +745,7 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
     <div class="modal-title" id="form-modal-title">Add Refueling Record</div>
     <form id="refuel-form" novalidate>
       <input type="hidden" id="field-id">
+      <input type="hidden" id="field-created-at">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="field-date">Date</label>
@@ -780,17 +782,21 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
       </div>
       <div class="form-group">
         <label class="form-label" for="field-location">Location</label>
-        <input type="text" class="form-input" id="field-location" maxlength="100" placeholder="e.g. Shell Station, Highway A1" aria-label="Location">
+        <input type="text" class="form-input" id="field-location" maxlength="100" placeholder="" aria-label="Location">
       </div>
       <div class="form-group">
         <label class="form-label" for="field-notes">Notes</label>
-        <textarea class="form-input" id="field-notes" rows="3" maxlength="500" placeholder="Any additional notes..." aria-label="Notes"></textarea>
+        <textarea class="form-input" id="field-notes" rows="3" maxlength="500" placeholder="" aria-label="Notes"></textarea>
         <div class="char-counter"><span id="notes-count">0</span>/500</div>
       </div>
       <div id="delete-confirm-wrap"></div>
       <button type="submit" class="btn btn-primary ripple-host" id="btn-save">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Save Record
+      </button>
+      <button type="button" class="btn btn-secondary ripple-host" id="btn-duplicate-record" style="display:none" onclick="duplicateRecord()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Duplicate Record
       </button>
       <button type="button" class="btn btn-secondary ripple-host" onclick="closeForm()">Cancel</button>
       <button type="button" class="btn btn-danger ripple-host" id="btn-delete-record" style="display:none" onclick="showDeleteConfirm()">
@@ -828,7 +834,7 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
       </button>
       <button class="btn btn-secondary ripple-host" onclick="triggerImport()" aria-label="Import records from file">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Import Records from File
+        Import Records from File (JSON)
       </button>
       <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(event)">
       <button class="btn btn-danger ripple-host" onclick="showDeleteAllConfirm()" aria-label="Delete all refueling records" id="btn-delete-all-records">
@@ -973,7 +979,7 @@ function getFilteredRecords() {
       return true;
     }
     return true;
-  }).sort((a,b) => b.date.localeCompare(a.date));
+  }).sort((a,b) => { const d = b.date.localeCompare(a.date); return d !== 0 ? d : (b.createdAt || '').localeCompare(a.createdAt || ''); });
 }
 
 // --- STATS COMPUTE ---
@@ -1037,7 +1043,7 @@ function renderSummary() {
 function renderRecordList() {
   const list = document.getElementById('records-list');
   const pagWrap = document.getElementById('pagination-wrap');
-  const sorted = [...AppState.records].sort((a,b) => b.date.localeCompare(a.date));
+  const sorted = [...AppState.records].sort((a,b) => { const d = b.date.localeCompare(a.date); return d !== 0 ? d : (b.createdAt || '').localeCompare(a.createdAt || ''); });
 
   if (!sorted.length) {
     list.innerHTML = `<div class="empty-state">
@@ -1071,7 +1077,8 @@ function renderRecordList() {
     let badgeClass = 'badge-good';
     if (cpkm > avgCpkm * 1.2) badgeClass = 'badge-bad';
     else if (cpkm > avgCpkm) badgeClass = 'badge-mid';
-    const loc = r.location ? `<div class="record-location">📍 ${r.location}</div>` : '';
+    const hasNote = r.notes && r.notes.trim().length > 0;
+    const loc = r.location ? `<div class="record-location">📍 ${r.location}${hasNote ? '<span class="note-icon" title="Has note">📋</span>' : ''}</div>` : '';
     return `<div class="record-card season-${season} ripple-host" style="animation-delay:${i*40}ms" data-id="${r.id}" onclick="handleCardClick(event, '${r.id}')">
       <div class="record-row">
         <span class="record-date">${r.date.split('-').reverse().join('/')}</span>
@@ -1146,6 +1153,8 @@ function openForm(id) {
   document.getElementById('computed-cpkm').textContent = '—';
   document.getElementById('delete-confirm-wrap').innerHTML = '';
   document.getElementById('btn-delete-record').style.display = 'none';
+  document.getElementById('btn-duplicate-record').style.display = 'none';
+  document.getElementById('field-created-at').value = '';
   document.getElementById('notes-count').textContent = '0';
   document.querySelectorAll('.form-input').forEach(i => i.classList.remove('error','valid'));
 
@@ -1170,6 +1179,7 @@ function openForm(id) {
       document.getElementById('notes-count').textContent = (rec.notes || '').length;
       updateComputed();
       document.getElementById('btn-delete-record').style.display = 'flex';
+      document.getElementById('btn-duplicate-record').style.display = 'flex';
     }
   } else {
     document.getElementById('form-modal-title').textContent = 'Add Refueling Record';
@@ -1238,6 +1248,7 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
     }
     showToast('Record updated', 'success');
   } else {
+    const createdAt = document.getElementById('field-created-at').value || now;
     AppState.records.push({
       id: uuid(),
       date: document.getElementById('field-date').value,
@@ -1245,7 +1256,7 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
       totalCost: total, costPerKm: cpkm,
       location: document.getElementById('field-location').value.trim() || null,
       notes: document.getElementById('field-notes').value.trim() || null,
-      createdAt: now, updatedAt: now,
+      createdAt: createdAt, updatedAt: now,
     });
     showToast('Record saved', 'success');
   }
@@ -1271,6 +1282,48 @@ function confirmDelete() {
   const id = document.getElementById('field-id').value;
   deleteRecord(id);
   closeForm();
+}
+
+function duplicateRecord() {
+  const id = document.getElementById('field-id').value;
+  const rec = AppState.records.find(r => r.id === id);
+  if (!rec) return;
+  const price = rec.unitPrice;
+  const location = rec.location || '';
+  const notes = rec.notes || '';
+  // Update the already-open form in place (do not close/reopen the modal).
+  // Reset form state exactly as openForm() does for a new record.
+  const form = document.getElementById('refuel-form');
+  form.reset();
+  document.getElementById('computed-total').textContent = '—';
+  document.getElementById('computed-cpkm').textContent = '—';
+  document.getElementById('delete-confirm-wrap').innerHTML = '';
+  document.getElementById('btn-delete-record').style.display = 'none';
+  document.getElementById('btn-duplicate-record').style.display = 'none';
+  document.querySelectorAll('.form-input').forEach(i => i.classList.remove('error','valid'));
+  const u = unitLabel();
+  document.getElementById('label-quantity').textContent = `Quantity (${u})`;
+  document.getElementById('label-price').textContent = `Price per ${u} (€)`;
+  document.getElementById('form-modal-title').textContent = 'Duplicate Record';
+  // New record: no id, so Save will insert a fresh entry
+  document.getElementById('field-id').value = '';
+  // 1a) Date set to today
+  document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
+  // Set createdAt to the current instant (moment the duplicate is initiated)
+  document.getElementById('field-created-at').value = new Date().toISOString();
+  // 1b) Distance left empty — user must fill it in
+  document.getElementById('field-distance').value = '';
+  // 1c) Quantity left empty — user must fill it in
+  document.getElementById('field-quantity').value = '';
+  // 1d) Copy Price (editable)
+  document.getElementById('field-price').value = price;
+  // 1e) Copy Location (editable)
+  document.getElementById('field-location').value = location;
+  // 1f) Copy Notes (editable)
+  document.getElementById('field-notes').value = notes;
+  document.getElementById('notes-count').textContent = notes.length;
+  updateComputed();
+  showToast('Record duplicated — edit the fields and save', 'warning');
 }
 
 function deleteRecord(id) {
@@ -1340,7 +1393,7 @@ function getYears() {
 
 function animVal(val, type) {
   // Returns a formatted placeholder; animateNumbers() will animate to the real value
-  if (type === 'price') return val.toFixed(4);
+  if (type === 'price') return val.toFixed(2);
   return val.toFixed(2);
 }
 
@@ -1360,9 +1413,9 @@ function renderStatsContent() {
   // PRIMARY CARDS
   const primaryCards = `
   <div class="stats-grid-3">
-    ${statCard('Min Price', `€${animVal(stats.minPrice,'price')}`, `/${unitLabel()}`, '▼', 'var(--success)', 'min-price')}
-    ${statCard('Avg Price', `€${animVal(stats.avgPrice,'price')}`, `/${unitLabel()}`, '≈', 'var(--warning)', 'avg-price')}
-    ${statCard('Max Price', `€${animVal(stats.maxPrice,'price')}`, `/${unitLabel()}`, '▲', 'var(--danger)', 'max-price')}
+    ${statCard('Min Price', `€ ${animVal(stats.minPrice,'price')}`, `/${unitLabel()}`, '▼', 'var(--success)', 'min-price')}
+    ${statCard('Avg Price', `€ ${animVal(stats.avgPrice,'price')}`, `/${unitLabel()}`, '≈', 'var(--warning)', 'avg-price')}
+    ${statCard('Max Price', `€ ${animVal(stats.maxPrice,'price')}`, `/${unitLabel()}`, '▲', 'var(--danger)', 'max-price')}
   </div>`;
 
   // SEASONAL
@@ -1510,7 +1563,7 @@ function renderCharts() {
         { label:'Price', data:prices, borderColor:'#3B82F6', backgroundColor:grad1, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#3B82F6' },
         { label:'Moving Avg', data:ma, borderColor:'#06B6D4', borderDash:[4,4], fill:false, tension:0.4, pointRadius:0 }
       ]
-    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` €${ctx.raw.toFixed(4)}/${unitLabel()}` } } } } });
+    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` € ${ctx.raw.toFixed(2)}/${unitLabel()}` } } } } });
   }
 
   // CHART 2: Cost per Km
@@ -1524,7 +1577,7 @@ function renderCharts() {
     grad2.addColorStop(0,'rgba(6,182,212,0.35)'); grad2.addColorStop(1,'rgba(6,182,212,0)');
     AppState.charts['chart-cpkm'] = new Chart(ctx2, { type:'line', data: {
       labels: labels2, datasets: [
-        { label:'Cost/Km', data:cpkms, borderColor:'#06B6D4', backgroundColor:grad2, fill:true, tension:0.4, pointRadius:3 },
+        { label:'Cost/Km (€)', data:cpkms, borderColor:'#06B6D4', backgroundColor:grad2, fill:true, tension:0.4, pointRadius:3 },
         { label:'Average', data: Array(cpkms.length).fill(avgLine), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
       ]
     }, options: baseOpts() });
@@ -1561,7 +1614,7 @@ function renderCharts() {
     AppState.charts['chart-monthly'] = new Chart(document.getElementById('chart-monthly'), { type:'bar', data: {
       labels: mKeys.map(k => { const [y,m]=k.split('-'); return MONTHS[parseInt(m)-1].slice(0,3)+' '+y.slice(2); }),
       datasets: [{ data: mKeys.map(k=>monthly[k]), backgroundColor: mColors, borderRadius: 6 }]
-    }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:false}, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(2)} €` } } } } });
+    }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:false}, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` € ${ctx.raw.toFixed(2)}` } } } } });
   }
 
   // CHART 4: Season grouped bar
@@ -1576,7 +1629,7 @@ function renderCharts() {
       { label:'Max', data: seaStats.map(s=>s?s.maxPrice:0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
     ]
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
-    tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} €` } } } } });
+    tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}` } } } } });
 
   // CHART 4b: Average Consumption by Season (kWh/100Km or L/100Km)
   destroyChart('chart-season-cons');
@@ -1627,9 +1680,9 @@ function renderCharts() {
   AppState.charts['chart-season-cpkm'] = new Chart(document.getElementById('chart-season-cpkm'), { type:'bar', data: {
     labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
     datasets: [
-      { label:'Min', data: seaStatsCpkm.map(s=>s?parseFloat(s.min.toFixed(4)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
-      { label:'Avg', data: seaStatsCpkm.map(s=>s?parseFloat(s.avg.toFixed(4)):0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
-      { label:'Max', data: seaStatsCpkm.map(s=>s?parseFloat(s.max.toFixed(4)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
+      { label:'Min', data: seaStatsCpkm.map(s=>s?parseFloat(s.min.toFixed(2)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
+      { label:'Avg', data: seaStatsCpkm.map(s=>s?parseFloat(s.avg.toFixed(2)):0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
+      { label:'Max', data: seaStatsCpkm.map(s=>s?parseFloat(s.max.toFixed(2)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
     ]
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
     tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}/Km` } } } } });
@@ -1645,7 +1698,7 @@ function renderCharts() {
     animation:{duration:800,easing:'easeInOutQuart'},
     plugins: { legend:{display:true,position:'bottom',labels:{color:textColor,font:{family:fontFamily},padding:12}},
       tooltip:{ backgroundColor: isDark?'#1E2435':'#fff', titleColor:isDark?'#F1F5F9':'#0F172A', bodyColor:textColor, borderColor:'rgba(59,130,246,0.3)',borderWidth:1,padding:10,cornerRadius:8,
-        callbacks:{label:(ctx)=>` €${ctx.raw.toFixed(2)} (${totalSpent>0?(ctx.raw/totalSpent*100).toFixed(1):0}%)`} }
+        callbacks:{label:(ctx)=>` € ${ctx.raw.toFixed(2)} (${totalSpent>0?(ctx.raw/totalSpent*100).toFixed(1):0}%)`} }
     }
   } });
 
@@ -1659,7 +1712,8 @@ function renderCharts() {
   }, options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
     animation:{duration:800,easing:'easeInOutQuart'},
     plugins: { legend:{display:true,position:'bottom',labels:{color:textColor,font:{family:fontFamily,size:10},padding:8}},
-      tooltip:{ backgroundColor:isDark?'#1E2435':'#fff', titleColor:isDark?'#F1F5F9':'#0F172A', bodyColor:textColor, borderColor:'rgba(59,130,246,0.3)',borderWidth:1,padding:10,cornerRadius:8 }
+      tooltip:{ backgroundColor:isDark?'#1E2435':'#fff', titleColor:isDark?'#F1F5F9':'#0F172A', bodyColor:textColor, borderColor:'rgba(59,130,246,0.3)',borderWidth:1,padding:10,cornerRadius:8,
+        callbacks:{label:(ctx)=>` ${ctx.raw} times`} }
     }
   } });
 }
@@ -1880,8 +1934,8 @@ function generateSampleData() {
     const now2 = new Date().toISOString();
     recs.push({
       id: uuid(), date: dateStr, distanceKm: parseFloat(dist.toFixed(1)),
-      quantity: parseFloat(qty.toFixed(2)), unitPrice: parseFloat(basePrice.toFixed(4)),
-      totalCost: parseFloat(total.toFixed(2)), costPerKm: parseFloat((total/dist).toFixed(4)),
+      quantity: parseFloat(qty.toFixed(2)), unitPrice: parseFloat(basePrice.toFixed(2)),
+      totalCost: parseFloat(total.toFixed(2)), costPerKm: parseFloat((total/dist).toFixed(2)),
       location: ['Shell Station A1','ENI Via Roma','Q8 Highway','Agip SS1','Tamoil Centro'][Math.floor(Math.random()*5)],
       notes: null, createdAt: now2, updatedAt: now2, _sample: true
     });

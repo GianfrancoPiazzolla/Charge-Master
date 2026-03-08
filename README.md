@@ -50,6 +50,7 @@
 
 - **➕ Add refueling/charging records** via a floating action button (FAB) that is always accessible.
 - **✏️ Edit any existing record** by tapping on it in the list — the same form is reused for both creation and editing.
+- **📋 Duplicate any existing record** via the **Duplicate Record** button available in the edit form. See [Duplicating a Record](#-duplicating-a-record) for full details.
 - **🗑️ Delete individual records** with an inline two-step confirmation to prevent accidental deletion.
 - **📄 Paginated record list** — records are displayed 20 per page, sorted by date (newest first), with pagination controls at the bottom.
 - **🏷️ Each record stores:**
@@ -78,6 +79,7 @@
   - 🟡 Yellow (`badge-mid`) — cost/Km is between average and 120% of average
   - 🔴 Red (`badge-bad`) — cost/Km exceeds 120% of average
 - **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** across all records.
+- **📊 Sample data banner:** When sample records are present (flagged with `_sample: true`), a dismissable info banner is shown at the top of the Refueling tab inviting the user to clear the sample data and start with real records. See [Sample Data Banner](#-sample-data-banner).
 - **📡 Empty state:** When no records exist, an illustrated placeholder is shown with a call-to-action button to add the first record, and the FAB pulses with a glow animation to draw attention.
 - **🔔 Toast notifications:** Non-intrusive, auto-dismissing toast messages (max 3 at once) appear after every user action (save, delete, export, import), with ✓ / ✕ / ⚠ icons.
 - **⚡ Ripple effect:** All interactive buttons and tappable elements feature a touch-responsive radial ripple animation for tactile feedback.
@@ -153,7 +155,7 @@ All charts feature:
 
 ```
 ┌──────────────────────────────────────────────┐
-│  ⚡ CHARGE MASTER          ⚙  🌙  ℹ         │  ← Fixed header with Settings, Theme toggle, About
+│  ⚡ CHARGE MASTER                 ⚙  🌙  ℹ  │  ← Fixed header with Settings, Theme toggle, About
 ├──────────────────────────────────────────────┤
 │                                              │
 │  Records │ Total Spent │ Total Km            │  ← Summary ribbon (always visible)
@@ -161,7 +163,7 @@ All charts feature:
 │  ┌──────────────────────────────────────┐    │
 │  │ ❄ 08/03/2026          🟢 €0.14/Km   │    │  ← Record card (season-colored border)
 │  │ 🚩 320 Km | 🔋 55 kWh |  €0.25/kWh  │    │
-│  │ € 13.75 💵     Shell Station A1 📍  │    │
+│  │ € 13.75 💵  Shell Station 📍    📋  │    │
 │  └──────────────────────────────────────┘    │
 │                                              │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination
@@ -246,6 +248,24 @@ Upload `index.html` to any static hosting service (GitHub Pages, Netlify, Vercel
 2. The form opens pre-filled with the record's data.
 3. Modify any field and tap **Save Record** to update.
 
+### 📋 Duplicating a Record
+
+The **Duplicate Record** feature allows quickly creating a new entry pre-filled from an existing one, without altering the original.
+
+1. Tap an existing record card to open the edit form.
+2. Tap the **Duplicate Record** button (visible only in edit mode).
+3. The form transitions in place — without closing and reopening the modal — into a **new-record state**:
+   - The modal title changes to **"Duplicate Record"**.
+   - The record **`id`** field is cleared so that saving will create a brand-new entry.
+   - **Date** is reset to today's date.
+   - **Distance** and **Quantity** are cleared — the user must fill these in.
+   - **Unit Price**, **Location**, and **Notes** are carried over from the original record (all editable).
+   - A hidden `createdAt` field is set to the current timestamp so the new record is correctly timestamped.
+4. Edit any fields as needed and tap **Save Record** to persist the new entry.
+5. A `warning` toast ("Record duplicated — edit the fields and save") is shown immediately after the duplication is initiated.
+
+> 💡 The duplicate workflow intentionally leaves Distance and Quantity empty to force the user to enter the values specific to the new session, while preserving contextual data (price, location, notes) that is likely to repeat.
+
 ### 🗑️ Deleting a Record
 
 - **Single record:** Open the edit form → tap **Delete Record** → confirm in the inline confirmation prompt.
@@ -304,7 +324,7 @@ Access Settings via the **⚙ gear icon** in the top-right header.
 ### ⚡ / ⛽ Preferred Unit
 
 Toggle between two tracking modes:
-- **⚡ kWh** — for electric vehicles (BEV). Labels throughout the app update to show kWh, Km/kWh, and kWh/100Km.
+- **🔋 kWh** — for electric vehicles (BEV). Labels throughout the app update to show kWh, Km/kWh, and kWh/100Km.
 - **⛽ Liters** — for ICE vehicles. Labels update to show L, Km/L, and L/100Km.
 
 Changing the unit is instant and affects all labels, forms, statistics, and chart tooltips throughout the app.
@@ -345,9 +365,15 @@ All charts are rendered with **Chart.js 4.4.1** and re-rendered whenever the act
 
 ### Line Charts (Charts 1–3)
 
+The three line charts are rendered in this order inside the Charts tab:
+
+1. **Distance Over Time** (`chart-distance`) — rendered first.
+2. **Unit Price Over Time** (`chart-price`) — rendered second.
+3. **Cost per Km Over Time** (`chart-cpkm`) — rendered third.
+
 Each line chart includes:
 - A **primary dataset** with gradient area fill and data-point dots.
-- A **secondary reference line** (dashed), which is either a rolling moving average (Chart 2) or a flat mean (Charts 1 and 3).
+- A **secondary reference line** (dashed), which is either a rolling moving average (Chart 2 — Price) or a flat mean (Charts 1 and 3).
 - Responsive layout with `maintainAspectRatio: false` inside a 220px-tall container.
 
 ### Bar Charts (Charts 4–8)

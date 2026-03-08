@@ -100,7 +100,7 @@ A badge displays the number of records matching the current filter in real time.
 
 The statistics content is organized in a structured layout:
 
-- **3-column price grid** immediately below, showing:
+- **3-column price grid** showing:
   - **▼ Min Price** — the lowest unit price recorded in the period.
   - **≈ Avg Price** — the average unit price.
   - **▲ Max Price** — the highest unit price.

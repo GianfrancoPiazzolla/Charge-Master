@@ -717,7 +717,7 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 <!-- BOTTOM TAB BAR -->
 <nav id="tab-bar" role="tablist">
   <button class="tab-btn active ripple-host" id="tab-refueling" role="tab" aria-selected="true" aria-controls="panel-refueling" onclick="switchTab('refueling')" aria-label="Refueling tab">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/><path d="M3 8l9 6 9-6"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v11"/><path d="M4 20h10"/><path d="M16 9h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M9 6V3"/><path d="M7 3h4"/><line x1="8" y1="12" x2="11" y2="9"/><line x1="11" y1="12" x2="8" y2="15"/></svg>
     <span>Refueling</span>
   </button>
   <button class="tab-btn ripple-host" id="tab-statistics" role="tab" aria-selected="false" aria-controls="panel-statistics" onclick="switchTab('statistics')" aria-label="Statistics tab">
@@ -1457,12 +1457,15 @@ function toggleSeason(s) {
 function renderCharts() {
   const wrap = document.getElementById('charts-content');
   wrap.innerHTML = `
-    <div class="chart-card"><div class="chart-title">Unit Price Over Time</div><div class="chart-wrap"><canvas id="chart-price"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Cost per Km Over Time</div><div class="chart-wrap"><canvas id="chart-cpkm"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Distance Over Time</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Monthly Total Expenditure</div><div class="chart-wrap-tall"><canvas id="chart-monthly"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Average Price by Season</div><div class="chart-wrap"><canvas id="chart-season"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Spending by Season</div><div class="chart-wrap"><canvas id="chart-donut-season"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Distance Over Time (Km)</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Unit Price Over Time (€/${unitLabel()})</div><div class="chart-wrap"><canvas id="chart-price"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Cost per Km Over Time (€)</div><div class="chart-wrap"><canvas id="chart-cpkm"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Monthly Total Expenditure (€)</div><div class="chart-wrap-tall"><canvas id="chart-monthly"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Average Price by Season (€)</div><div class="chart-wrap"><canvas id="chart-season"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Average Consumption by Season (${unitLabel()}/100Km)</div><div class="chart-wrap"><canvas id="chart-season-cons"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Average Efficiency by Season (Km/${unitLabel()})</div><div class="chart-wrap"><canvas id="chart-season-eff"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Average Cost per Km by Season (€/Km)</div><div class="chart-wrap"><canvas id="chart-season-cpkm"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Spending by Season (€)</div><div class="chart-wrap"><canvas id="chart-donut-season"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Refueling Frequency by Month</div><div class="chart-wrap"><canvas id="chart-donut-month"></canvas></div></div>
   `;
   const recs = getFilteredRecords();
@@ -1559,7 +1562,7 @@ function renderCharts() {
     AppState.charts['chart-monthly'] = new Chart(document.getElementById('chart-monthly'), { type:'bar', data: {
       labels: mKeys.map(k => { const [y,m]=k.split('-'); return MONTHS[parseInt(m)-1].slice(0,3)+' '+y.slice(2); }),
       datasets: [{ data: mKeys.map(k=>monthly[k]), backgroundColor: mColors, borderRadius: 6 }]
-    }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:false} } } });
+    }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:false}, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(2)} €` } } } } });
   }
 
   // CHART 4: Season grouped bar
@@ -1573,7 +1576,64 @@ function renderCharts() {
       { label:'Avg', data: seaStats.map(s=>s?s.avgPrice:0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
       { label:'Max', data: seaStats.map(s=>s?s.maxPrice:0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
     ]
-  }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}} } } });
+  }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
+    tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} €` } } } } });
+
+  // CHART 4b: Average Consumption by Season (kWh/100Km or L/100Km)
+  destroyChart('chart-season-cons');
+  const seaStatsCons = seasons.map(s => {
+    const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
+    if (!sRecs.length) return null;
+    const cons = sRecs.map(r => (r.quantity / r.distanceKm) * 100);
+    return { min: Math.min(...cons), avg: cons.reduce((a,b)=>a+b,0)/cons.length, max: Math.max(...cons) };
+  });
+  const consUnit = `${unitLabel()}/100Km`;
+  AppState.charts['chart-season-cons'] = new Chart(document.getElementById('chart-season-cons'), { type:'bar', data: {
+    labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
+    datasets: [
+      { label:'Min', data: seaStatsCons.map(s=>s?parseFloat(s.min.toFixed(2)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
+      { label:'Avg', data: seaStatsCons.map(s=>s?parseFloat(s.avg.toFixed(2)):0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
+      { label:'Max', data: seaStatsCons.map(s=>s?parseFloat(s.max.toFixed(2)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
+    ]
+  }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
+    tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} ${consUnit}` } } } } });
+
+  // CHART 4c: Average Efficiency by Season (Km/kWh or Km/L)
+  destroyChart('chart-season-eff');
+  const seaStatsEff = seasons.map(s => {
+    const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
+    if (!sRecs.length) return null;
+    const effs = sRecs.map(r => r.distanceKm / r.quantity);
+    return { min: Math.min(...effs), avg: effs.reduce((a,b)=>a+b,0)/effs.length, max: Math.max(...effs) };
+  });
+  const effUnit = `Km/${unitLabel()}`;
+  AppState.charts['chart-season-eff'] = new Chart(document.getElementById('chart-season-eff'), { type:'bar', data: {
+    labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
+    datasets: [
+      { label:'Min', data: seaStatsEff.map(s=>s?parseFloat(s.min.toFixed(2)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
+      { label:'Avg', data: seaStatsEff.map(s=>s?parseFloat(s.avg.toFixed(2)):0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
+      { label:'Max', data: seaStatsEff.map(s=>s?parseFloat(s.max.toFixed(2)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
+    ]
+  }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
+    tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} ${effUnit}` } } } } });
+
+  // CHART 4c: Average Cost per Km by Season (€/Km)
+  destroyChart('chart-season-cpkm');
+  const seaStatsCpkm = seasons.map(s => {
+    const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
+    if (!sRecs.length) return null;
+    const cpkms2 = sRecs.map(r => r.costPerKm);
+    return { min: Math.min(...cpkms2), avg: cpkms2.reduce((a,b)=>a+b,0)/cpkms2.length, max: Math.max(...cpkms2) };
+  });
+  AppState.charts['chart-season-cpkm'] = new Chart(document.getElementById('chart-season-cpkm'), { type:'bar', data: {
+    labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
+    datasets: [
+      { label:'Min', data: seaStatsCpkm.map(s=>s?parseFloat(s.min.toFixed(4)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
+      { label:'Avg', data: seaStatsCpkm.map(s=>s?parseFloat(s.avg.toFixed(4)):0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
+      { label:'Max', data: seaStatsCpkm.map(s=>s?parseFloat(s.max.toFixed(4)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
+    ]
+  }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
+    tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}/Km` } } } } });
 
   // CHART 5: Donut season spending
   destroyChart('chart-donut-season');

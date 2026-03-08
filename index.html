@@ -809,7 +809,7 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
     <div class="settings-section">
       <div class="settings-section-title">Preferred Unit</div>
       <div class="unit-pills">
-        <button class="unit-pill ripple-host" id="pill-kwh" onclick="setUnit('kWh')" aria-label="Use kWh unit">⚡ kWh</button>
+        <button class="unit-pill ripple-host" id="pill-kwh" onclick="setUnit('kWh')" aria-label="Use kWh unit">🔋 kWh</button>
         <button class="unit-pill ripple-host" id="pill-l" onclick="setUnit('L')" aria-label="Use Liters unit">⛽ Liters</button>
       </div>
     </div>
@@ -958,7 +958,7 @@ function getSeason(month) {
   return 'autumn';
 }
 const SEASON_COLORS = { winter:'#60A5FA', spring:'#4ADE80', summer:'#FB923C', autumn:'#FBBF24' };
-const SEASON_ICONS = { winter:'❄', spring:'🌱', summer:'☀', autumn:'🍂' };
+const SEASON_ICONS = { winter:'❄️', spring:'🌱', summer:'☀️', autumn:'🍂' };
 
 // --- FILTER ---
 function getFilteredRecords() {
@@ -1029,7 +1029,7 @@ function renderSummary() {
   const dist = AppState.records.reduce((a,r) => a + r.distanceKm, 0);
   wrap.innerHTML = `<div class="summary-ribbon">
     <div class="ribbon-item"><div class="ribbon-label">Records</div><div class="ribbon-value">${total}</div></div>
-    <div class="ribbon-item"><div class="ribbon-label">Total Spent</div><div class="ribbon-value">€ ${spent.toFixed(2)}</div></div>
+    <div class="ribbon-item"><div class="ribbon-label">Total Expense</div><div class="ribbon-value">€ ${spent.toFixed(2)}</div></div>
     <div class="ribbon-item"><div class="ribbon-label">Total Km</div><div class="ribbon-value">${dist.toFixed(0)}</div></div>
   </div>`;
 }
@@ -1071,18 +1071,18 @@ function renderRecordList() {
     let badgeClass = 'badge-good';
     if (cpkm > avgCpkm * 1.2) badgeClass = 'badge-bad';
     else if (cpkm > avgCpkm) badgeClass = 'badge-mid';
-    const loc = r.location ? `<div class="record-location"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${r.location}</div>` : '';
+    const loc = r.location ? `<div class="record-location">📍 ${r.location}</div>` : '';
     return `<div class="record-card season-${season} ripple-host" style="animation-delay:${i*40}ms" data-id="${r.id}" onclick="handleCardClick(event, '${r.id}')">
       <div class="record-row">
         <span class="record-date">${r.date}</span>
         <span class="cost-badge ${badgeClass}">€ ${cpkm.toFixed(2)}/Km</span>
       </div>
       <div class="stat-chips">
-        <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '⚡' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
-        <div class="stat-chip">📍 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
+        <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
+        <div class="stat-chip">🚩 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
       </div>
       <div class="record-row" style="margin-top:4px">
-        <div><span class="record-cost">€${r.totalCost.toFixed(2)}</span><span class="record-unit-price">@ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
+        <div><span class="record-cost">€ ${r.totalCost.toFixed(2)}</span><span class="record-unit-price">💵 @ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
       </div>
       ${loc}
       <button class="menu-btn ripple-host" aria-label="Record options" onclick="toggleMenu(event,'${r.id}')">
@@ -1388,17 +1388,17 @@ function renderStatsContent() {
 
   // EXTRA CARDS
   const extraCards = `<div class="stats-grid-2">
-    ${statCard2('Total Records', stats.count, '', '📋')}
-    ${statCard2('Total Distance', stats.totalDist.toFixed(1), ' Km', '🛣')}
-    ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💰')}
-    ${statCard2(AppState.settings.unit==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), AppState.settings.unit==='kWh'?'⚡':'⛽')}
-    ${statCard2('Efficiency', stats.avgKmPerUnit.toFixed(2), ` Km/${unitLabel()}`, AppState.settings.unit==='kWh'?'⚡':'⛽')}
+    ${statCard2('Total Records', stats.count, '', '🗃️')}
+    ${statCard2('Total Distance', stats.totalDist.toFixed(1), ' Km', '🛣️')}
+    ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💸')}
+    ${statCard2(AppState.settings.unit==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), AppState.settings.unit==='kWh'?'🔋':'⛽')}
+    ${statCard2('Efficiency', stats.avgKmPerUnit.toFixed(2), ` Km/${unitLabel()}`, '💹')}
     ${statCard2('Average Consumption', stats.avgConsumption.toFixed(2), ` ${unitLabel()}/100Km`, '📈')}
-    ${statCard2('Average Cost/Km', '€ '+stats.avgCpkm.toFixed(2), '/Km', '📊')}
+    ${statCard2('Average Cost/Km', '€ '+stats.avgCpkm.toFixed(2), '/Km', '💰')}
   </div>`;
 
   wrap.innerHTML = primaryCards +
-    `<div class="section-hdr"><span class="section-title">🍂 Seasonal Breakdown</span></div>` +
+    `<div class="section-hdr"><span class="section-title">⛅ Seasonal Breakdown</span></div>` +
     seasonalCards +
     `<div class="section-hdr"><span class="section-title">📊 Additional Stats</span></div>` +
     extraCards;

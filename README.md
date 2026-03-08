@@ -55,7 +55,7 @@
 - **🏷️ Each record stores:**
   - 📅 Date of the refueling/charging session
   - 📏 Distance traveled since the last session (in Km)
-  - ⚡ / ⛽ Energy or fuel quantity (kWh or Liters, switchable globally)
+  - 🔋 / ⛽ Energy or fuel quantity (kWh or Liters, switchable globally)
   - 💶 Unit price (€ per kWh or € per Liter)
   - 💰 Total cost (auto-computed in real time)
   - 📊 Cost per Km (auto-computed in real time)
@@ -71,9 +71,9 @@
 - **🎨 Season-colored record cards:** Each record card displays a colored left-border accent based on the season of its date:
   - ❄️ **Winter** (Dec, Jan, Feb) → Blue (`#60A5FA`)
   - 🌱 **Spring** (Mar, Apr, May) → Green (`#4ADE80`)
-  - ☀️ **Summer** (Jun, Jul, Aug) → Orange (`#FB923C`)
-  - 🍂 **Autumn** (Sep, Oct, Nov) → Amber (`#FBBF24`)
-- **🟢🟡🔴 Cost-per-Km badge:** Each record card shows a color-coded efficiency badge:
+  - ☀️ **Summer** (Jun, Jul, Aug) → Yellow-green (`#D8FA3F`)
+  - 🍂 **Autumn** (Sep, Oct, Nov) → Amber (`#FB923C`)
+- **Cost-per-Km badge:** Each record card shows a color-coded efficiency badge:
   - 🟢 Green (`badge-good`) — cost/Km is below or equal to average
   - 🟡 Yellow (`badge-mid`) — cost/Km is between average and 120% of average
   - 🔴 Red (`badge-bad`) — cost/Km exceeds 120% of average
@@ -96,16 +96,19 @@ The filter can be set to one of three modes using a **segmented control**:
 
 A badge displays the number of records matching the current filter in real time.
 
-#### 📈 Key Statistics Cards (3-column grid)
+#### 📈 Key Statistics Cards
 
-For the filtered dataset, three stat cards are shown:
-- **▼ Min Price** — the lowest unit price recorded in the period.
-- **≈ Avg Price** — the average unit price.
-- **▲ Max Price** — the highest unit price.
+The statistics content is organized in a structured layout:
 
-These values animate from zero to their final value using an **easeOutCubic** animation when the tab is opened or the filter changes.
+- **Total Records** — displayed alone in a full-width single-column card at the top of the section.
+- **3-column price grid** immediately below, showing:
+  - **▼ Min Price** — the lowest unit price recorded in the period.
+  - **≈ Avg Price** — the average unit price.
+  - **▲ Max Price** — the highest unit price.
 
-#### 🍂 Seasonal Breakdown (collapsible)
+These price values animate from zero to their final value using an **easeOutCubic** animation when the tab is opened or the filter changes.
+
+#### ⛅ Seasonal Breakdown (collapsible)
 
 An accordion-style section groups statistics by season. Each season card (Winter ❄️, Spring 🌱, Summer ☀️, Autumn 🍂) is individually collapsible and shows, if data exists for that season in the selected period:
 - Minimum price
@@ -115,27 +118,29 @@ An accordion-style section groups statistics by season. Each season card (Winter
 #### 📋 Additional Stats (2-column grid)
 
 A secondary grid provides:
-- 📋 **Total Records** — count of sessions in the selected period.
 - 🛣️ **Total Distance** — sum of all Km covered.
-- 💰 **Total Expense** — total euros spent.
-- ⚡ / ⛽ **Total Energy / Fuel** — total kWh or Liters consumed.
-- ⚡ **Efficiency** — average Km per unit (Km/kWh or Km/L).
+- 🔋 / ⛽ **Total Energy / Fuel** — total kWh or Liters consumed.
+- 💸 **Total Expense** — total euros spent.
+- 💰 **Average Cost per Km** — average €/Km across the period.
 - 📈 **Average Consumption** — kWh or L per 100 Km.
-- 📊 **Average Cost per Km** — average €/Km across the period.
+- 💹 **Efficiency** — average Km per unit (Km/kWh or Km/L).
 
 ### 📉 Charts Tab
 
-Seven interactive charts powered by **Chart.js 4.4.1**, all themed to match the active dark/light mode and updated whenever the theme or filter changes.
+Ten interactive charts powered by **Chart.js 4.4.1**, all themed to match the active dark/light mode and updated whenever the theme or filter changes.
 
 | # | Chart | Type | Description |
 |---|-------|------|-------------|
-| 1 | **Unit Price Over Time** | Line | Price per unit plotted chronologically, with a dashed **5-point moving average** overlay. |
-| 2 | **Cost per Km Over Time** | Line | Cost/Km per session plotted over time, with a dashed **flat average** reference line. |
-| 3 | **Distance Over Time** | Line | Km per session plotted over time, with a dashed **flat average** reference line. |
+| 1 | **Distance Over Time** | Line | Km per session plotted over time, with a dashed **flat average** reference line. |
+| 2 | **Unit Price Over Time** | Line | Price per unit plotted chronologically, with a dashed **5-point moving average** overlay. |
+| 3 | **Cost per Km Over Time** | Line | Cost/Km per session plotted over time, with a dashed **flat average** reference line. |
 | 4 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all records, not the filter), with bars color-coded by season. |
 | 5 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all records). |
-| 6 | **Spending by Season** | Doughnut | Share of total expenditure per season (%), with legend and tooltips showing exact amounts and percentages. |
-| 7 | **Refueling Frequency by Month** | Doughnut | Number of sessions per calendar month across all records, with a gradient color scheme. |
+| 6 | **Average Consumption by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max consumption (kWh/100Km or L/100Km) per season (uses all records). |
+| 7 | **Average Efficiency by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max efficiency (Km/kWh or Km/L) per season (uses all records). |
+| 8 | **Average Cost per Km by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max €/Km per season (uses all records). |
+| 9 | **Spending by Season** | Doughnut | Share of total expenditure per season (%), with legend and tooltips showing exact amounts and percentages. |
+| 10 | **Refueling Frequency by Month** | Doughnut | Number of sessions per calendar month across all records, with a gradient color scheme. |
 
 All charts feature:
 - 800ms entrance animation with `easeInOutQuart` easing.
@@ -155,9 +160,9 @@ All charts feature:
 │  Records │ Total Spent │ Total Km            │  ← Summary ribbon (always visible)
 │                                              │
 │  ┌──────────────────────────────────────┐    │
-│  │ ❄ 2024-12-15          🟢 €0.14/Km   │    │  ← Record card (season-colored border)
-│  │ 320 Km  |  55 kWh  |  €0.25/kWh      │    │
-│  │ € 13.75         Shell Station A1 📍   │    │
+│  │ ❄ 08/03/2026          🟢 €0.14/Km   │    │  ← Record card (season-colored border)
+│  │ 🚩 320 Km | 🔋 55 kWh |  €0.25/kWh  │    │
+│  │ € 13.75 💵     Shell Station A1 📍  │    │
 │  └──────────────────────────────────────┘    │
 │                                              │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination
@@ -284,7 +289,9 @@ Records are stored in `localStorage` under the key `chargemaster_v1_records` as 
 Charge Master is a fully installable **Progressive Web App**:
 
 - 📲 **Installable** — on mobile (iOS/Android) and desktop (Chrome/Edge), users can install it to the home screen or app launcher via the browser's "Add to Home Screen" / "Install" prompt.
-- 🔌 **Offline-first** — a Service Worker is registered on load. It caches the app shell so the app works without any internet connection after the first visit.
+- 🔌 **Offline-first** — two Service Worker registrations are active:
+  - An **inline blob-based Service Worker** generated at runtime (`initPWA()`), which caches the app shell immediately on first load using a `chargemaster-v1` cache.
+  - An **external Service Worker** (`/sw.js`) registered via a standard `navigator.serviceWorker.register('/sw.js')` call on the `window load` event, for environments where a physical `sw.js` file is deployed alongside the app.
 - 🎨 **Themed status bar** — on iOS (via `apple-mobile-web-app-status-bar-style`) and Android (via `theme-color` meta tag), the status bar matches the app's dark/light theme.
 - 🖼️ **Dynamic icons** — app icons (192×192 and 512×512) are generated programmatically on a `<canvas>` with the branded blue-to-cyan gradient and a lightning bolt symbol.
 - 📄 **Web App Manifest** — dynamically injected at runtime with name, short name, description, orientation, colors, and icons.
@@ -341,18 +348,21 @@ All charts are rendered with **Chart.js 4.4.1** and re-rendered whenever the act
 
 Each line chart includes:
 - A **primary dataset** with gradient area fill and data-point dots.
-- A **secondary reference line** (dashed), which is either a rolling moving average (Chart 1) or a flat mean (Charts 2–3).
+- A **secondary reference line** (dashed), which is either a rolling moving average (Chart 2) or a flat mean (Charts 1 and 3).
 - Responsive layout with `maintainAspectRatio: false` inside a 220px-tall container.
 
-### Bar Charts (Charts 4–5)
+### Bar Charts (Charts 4–8)
 
 - **Chart 4 (Monthly Expenditure):** Horizontal bars, one per month-year combination, colored by the season of that month. Uses **all records** regardless of the active filter to provide a complete spending history.
-- **Chart 5 (Seasonal Price):** Grouped horizontal bar chart showing Min / Avg / Max prices per season, using all records.
+- **Chart 5 (Seasonal Price):** Grouped horizontal bar chart showing Min / Avg / Max unit prices per season, using all records.
+- **Chart 6 (Seasonal Consumption):** Grouped horizontal bar chart showing Min / Avg / Max consumption (kWh/100Km or L/100Km) per season, using all records.
+- **Chart 7 (Seasonal Efficiency):** Grouped horizontal bar chart showing Min / Avg / Max efficiency (Km/kWh or Km/L) per season, using all records.
+- **Chart 8 (Seasonal Cost per Km):** Grouped horizontal bar chart showing Min / Avg / Max €/Km per season, using all records.
 
-### Doughnut Charts (Charts 6–7)
+### Doughnut Charts (Charts 9–10)
 
-- **Chart 6 (Season Spending):** Cutout doughnut (65% inner radius) showing the percentage of total expenditure per season. Tooltips show absolute € amounts and percentages.
-- **Chart 7 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month across all records. Colors use an HSL gradient from cool blue to warm blue.
+- **Chart 9 (Season Spending):** Cutout doughnut (65% inner radius) showing the percentage of total expenditure per season. Tooltips show absolute € amounts and percentages.
+- **Chart 10 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month across all records. Colors use an HSL gradient from cool blue to warm blue.
 
 All charts are properly destroyed (`chart.destroy()`) before being re-created to prevent memory leaks and canvas conflicts.
 

@@ -333,7 +333,6 @@ html, body {
 /* STAT CARDS GRID */
 .stats-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
 .stats-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
-.stats-grid-1 { display: grid; grid-template-columns: repeat(1,1fr); gap: 10px; margin-bottom: 16px; }
 @media (max-width: 400px) { .stats-grid-3 { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .stats-grid-2 { grid-template-columns: 1fr; } }
 
@@ -1359,7 +1358,7 @@ function renderStatsContent() {
   }
 
   // PRIMARY CARDS
-  const primaryCards = `<div class="stats-grid-1">${statCard2('Total Records', stats.count, '', '🗃️')}</div>
+  const primaryCards = `
   <div class="stats-grid-3">
     ${statCard('Min Price', `€${animVal(stats.minPrice,'price')}`, `/${unitLabel()}`, '▼', 'var(--success)', 'min-price')}
     ${statCard('Avg Price', `€${animVal(stats.avgPrice,'price')}`, `/${unitLabel()}`, '≈', 'var(--warning)', 'avg-price')}

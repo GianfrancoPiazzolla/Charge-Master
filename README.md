@@ -100,7 +100,6 @@ A badge displays the number of records matching the current filter in real time.
 
 The statistics content is organized in a structured layout:
 
-- **Total Records** — displayed alone in a full-width single-column card at the top of the section.
 - **3-column price grid** immediately below, showing:
   - **▼ Min Price** — the lowest unit price recorded in the period.
   - **≈ Avg Price** — the average unit price.

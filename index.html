@@ -38,8 +38,8 @@
   --text-3xl: 36px;
   --season-winter: #60A5FA;
   --season-spring: #4ADE80;
-  --season-summer: #FB923C;
-  --season-autumn: #FBBF24;
+  --season-summer: #D8FA3F;
+  --season-autumn: #FB923C;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -333,6 +333,7 @@ html, body {
 /* STAT CARDS GRID */
 .stats-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
 .stats-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.stats-grid-1 { display: grid; grid-template-columns: repeat(1,1fr); gap: 10px; margin-bottom: 16px; }
 @media (max-width: 400px) { .stats-grid-3 { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .stats-grid-2 { grid-template-columns: 1fr; } }
 
@@ -957,7 +958,7 @@ function getSeason(month) {
   if ([5,6,7].includes(month)) return 'summer';
   return 'autumn';
 }
-const SEASON_COLORS = { winter:'#60A5FA', spring:'#4ADE80', summer:'#FB923C', autumn:'#FBBF24' };
+const SEASON_COLORS = { winter:'#60A5FA', spring:'#4ADE80', summer:'#D8FA3F', autumn:'#FB923C' };
 const SEASON_ICONS = { winter:'❄️', spring:'🌱', summer:'☀️', autumn:'🍂' };
 
 // --- FILTER ---
@@ -1074,7 +1075,7 @@ function renderRecordList() {
     const loc = r.location ? `<div class="record-location">📍 ${r.location}</div>` : '';
     return `<div class="record-card season-${season} ripple-host" style="animation-delay:${i*40}ms" data-id="${r.id}" onclick="handleCardClick(event, '${r.id}')">
       <div class="record-row">
-        <span class="record-date">${r.date}</span>
+        <span class="record-date">${r.date.split('-').reverse().join('/')}</span>
         <span class="cost-badge ${badgeClass}">€ ${cpkm.toFixed(2)}/Km</span>
       </div>
       <div class="stat-chips">
@@ -1358,7 +1359,8 @@ function renderStatsContent() {
   }
 
   // PRIMARY CARDS
-  const primaryCards = `<div class="stats-grid-3">
+  const primaryCards = `<div class="stats-grid-1">${statCard2('Total Records', stats.count, '', '🗃️')}</div>
+  <div class="stats-grid-3">
     ${statCard('Min Price', `€${animVal(stats.minPrice,'price')}`, `/${unitLabel()}`, '▼', 'var(--success)', 'min-price')}
     ${statCard('Avg Price', `€${animVal(stats.avgPrice,'price')}`, `/${unitLabel()}`, '≈', 'var(--warning)', 'avg-price')}
     ${statCard('Max Price', `€${animVal(stats.maxPrice,'price')}`, `/${unitLabel()}`, '▲', 'var(--danger)', 'max-price')}
@@ -1388,13 +1390,12 @@ function renderStatsContent() {
 
   // EXTRA CARDS
   const extraCards = `<div class="stats-grid-2">
-    ${statCard2('Total Records', stats.count, '', '🗃️')}
     ${statCard2('Total Distance', stats.totalDist.toFixed(1), ' Km', '🛣️')}
-    ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💸')}
     ${statCard2(AppState.settings.unit==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), AppState.settings.unit==='kWh'?'🔋':'⛽')}
-    ${statCard2('Efficiency', stats.avgKmPerUnit.toFixed(2), ` Km/${unitLabel()}`, '💹')}
-    ${statCard2('Average Consumption', stats.avgConsumption.toFixed(2), ` ${unitLabel()}/100Km`, '📈')}
+    ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💸')}
     ${statCard2('Average Cost/Km', '€ '+stats.avgCpkm.toFixed(2), '/Km', '💰')}
+    ${statCard2('Average Consumption', stats.avgConsumption.toFixed(2), ` ${unitLabel()}/100Km`, '📈')}
+    ${statCard2('Efficiency', stats.avgKmPerUnit.toFixed(2), ` Km/${unitLabel()}`, '💹')}
   </div>`;
 
   wrap.innerHTML = primaryCards +
@@ -1496,7 +1497,7 @@ function renderCharts() {
   // CHART 1: Price over time
   destroyChart('chart-price');
   if (sorted.length) {
-    const labels = sorted.map(r => r.date.slice(5));
+    const labels = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
     const prices = sorted.map(r => r.unitPrice);
     const ma = prices.map((_, i) => { const sl = prices.slice(Math.max(0,i-2),i+3); return sl.reduce((a,b)=>a+b,0)/sl.length; });
     const ctx1 = document.getElementById('chart-price').getContext('2d');
@@ -1513,7 +1514,7 @@ function renderCharts() {
   // CHART 2: Cost per Km
   destroyChart('chart-cpkm');
   if (sorted.length) {
-    const labels2 = sorted.map(r => r.date.slice(5));
+    const labels2 = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
     const cpkms = sorted.map(r => r.costPerKm);
     const avgLine = cpkms.reduce((a,b)=>a+b,0)/cpkms.length;
     const ctx2 = document.getElementById('chart-cpkm').getContext('2d');
@@ -1530,7 +1531,7 @@ function renderCharts() {
   // CHART 3: Distance Over Time
   destroyChart('chart-distance');
   if (sorted.length) {
-    const labels3 = sorted.map(r => r.date.slice(5));
+    const labels3 = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
     const dists = sorted.map(r => r.distanceKm);
     const avgDist = dists.reduce((a,b)=>a+b,0)/dists.length;
     const ctx3 = document.getElementById('chart-distance').getContext('2d');

@@ -1470,6 +1470,8 @@ function renderCharts() {
     <div class="chart-card"><div class="chart-title">Distance Over Time (Km)</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Unit Price Over Time (€/${unitLabel()})</div><div class="chart-wrap"><canvas id="chart-price"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Cost per Km Over Time (€/Km)</div><div class="chart-wrap"><canvas id="chart-cpkm"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Consumption Over Time (${unitLabel()}/100Km)</div><div class="chart-wrap"><canvas id="chart-consumption"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Efficiency Over Time (Km/${unitLabel()})</div><div class="chart-wrap"><canvas id="chart-efficiency"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Monthly Total Expenditure (€)</div><div class="chart-wrap-tall"><canvas id="chart-monthly"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Average Price by Season (€)</div><div class="chart-wrap"><canvas id="chart-season"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Average Consumption by Season (${unitLabel()}/100Km)</div><div class="chart-wrap"><canvas id="chart-season-cons"></canvas></div></div>
@@ -1538,7 +1540,41 @@ function renderCharts() {
         { label:'Cost/Km', data:cpkms, borderColor:'#06B6D4', backgroundColor:grad2, fill:true, tension:0.4, pointRadius:3 },
         { label:'Average', data: Array(cpkms.length).fill(avgLine), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
       ]
-   }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}` } } } } });
+   }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` € ${ctx.raw.toFixed(2)}/Km` } } } } });
+  }
+
+  // CHART: Consumption Over Time (kWh/100Km or L/100Km)
+  destroyChart('chart-consumption');
+  if (sorted.length) {
+    const labelsCons = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
+    const consValues = sorted.map(r => parseFloat(((r.quantity / r.distanceKm) * 100).toFixed(2)));
+    const avgCons = consValues.reduce((a,b)=>a+b,0)/consValues.length;
+    const ctxCons = document.getElementById('chart-consumption').getContext('2d');
+    const gradCons = ctxCons.createLinearGradient(0,0,0,200);
+    gradCons.addColorStop(0,'rgba(251,146,60,0.4)'); gradCons.addColorStop(1,'rgba(251,146,60,0)');
+    AppState.charts['chart-consumption'] = new Chart(ctxCons, { type:'line', data: {
+      labels: labelsCons, datasets: [
+        { label:`Consumption (${unitLabel()}/100Km)`, data:consValues, borderColor:'#FB923C', backgroundColor:gradCons, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#FB923C' },
+        { label:'Average', data: Array(consValues.length).fill(parseFloat(avgCons.toFixed(2))), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
+      ]
+    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(2)} ${unitLabel()}/100Km` } } } } });
+  }
+
+  // CHART: Efficiency Over Time (Km/kWh or Km/L)
+  destroyChart('chart-efficiency');
+  if (sorted.length) {
+    const labelsEff = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
+    const effValues = sorted.map(r => parseFloat((r.distanceKm / r.quantity).toFixed(2)));
+    const avgEff = effValues.reduce((a,b)=>a+b,0)/effValues.length;
+    const ctxEff = document.getElementById('chart-efficiency').getContext('2d');
+    const gradEff = ctxEff.createLinearGradient(0,0,0,200);
+    gradEff.addColorStop(0,'rgba(168,85,247,0.4)'); gradEff.addColorStop(1,'rgba(168,85,247,0)');
+    AppState.charts['chart-efficiency'] = new Chart(ctxEff, { type:'line', data: {
+      labels: labelsEff, datasets: [
+        { label:`Efficiency (Km/${unitLabel()})`, data:effValues, borderColor:'#A855F7', backgroundColor:gradEff, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#A855F7' },
+        { label:'Average', data: Array(effValues.length).fill(parseFloat(avgEff.toFixed(2))), borderColor:'#F59E0B', borderDash:[6,3], fill:false, pointRadius:0 }
+      ]
+    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(2)} Km/${unitLabel()}` } } } } });
   }
 
   // CHART: Distance Over Time
@@ -1918,6 +1954,7 @@ function addThemeMeta() {
   renderAll();
 })();
 </script>
+
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {

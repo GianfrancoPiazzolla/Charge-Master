@@ -1061,7 +1061,7 @@ function renderRecordList() {
       <div class="stat-chips">
         <div class="stat-chip">🚩 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
         <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
-        <div class="stat-chip">💹 <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
+        <div class="stat-chip">🚥 <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
       </div>
       <div class="record-row" style="margin-top:4px">
         <div><span class="record-cost">€ ${r.totalCost.toFixed(2)}</span><span class="record-unit-price">💵 @ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>

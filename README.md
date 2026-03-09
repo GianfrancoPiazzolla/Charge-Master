@@ -52,7 +52,7 @@
 - **✏️ Edit any existing record** by tapping on it in the list — the same form is reused for both creation and editing.
 - **📋 Duplicate any existing record** via the **Duplicate Record** button available in the edit form. See [Duplicating a Record](#-duplicating-a-record) for full details.
 - **🗑️ Delete individual records** with an inline two-step confirmation to prevent accidental deletion.
-- **📄 Paginated record list** — records are displayed 20 per page, sorted by date (newest first), with pagination controls at the bottom.
+- **📄 Paginated record list** — records are displayed 20 per page, sorted by date (newest first). When two records share the same date, they are further sorted by their `createdAt` timestamp (newest first), ensuring stable and deterministic ordering. Pagination controls are shown at the bottom.
 - **🏷️ Each record stores:**
   - 📅 Date of the refueling/charging session
   - 📏 Distance traveled since the last session (in Km)
@@ -78,6 +78,10 @@
   - 🟢 Green (`badge-good`) — cost/Km is below or equal to average
   - 🟡 Yellow (`badge-mid`) — cost/Km is between average and 120% of average
   - 🔴 Red (`badge-bad`) — cost/Km exceeds 120% of average
+- **📊 Inline stat chips on record cards:** Each record card displays three stat chips in a row:
+  - 🚩 **Distance** — kilometers traveled for that session.
+  - 🔋 / ⛽ **Quantity** — energy (kWh) or fuel (Liters) consumed.
+  - 💹 **Efficiency** — Km per unit (Km/kWh or Km/L), computed as `distanceKm / quantity`.
 - **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** across all records.
 - **📊 Sample data banner:** When sample records are present (flagged with `_sample: true`), a dismissable info banner is shown at the top of the Refueling tab inviting the user to clear the sample data and start with real records. See [Sample Data Banner](#-sample-data-banner).
 - **📡 Empty state:** When no records exist, an illustrated placeholder is shown with a call-to-action button to add the first record, and the FAB pulses with a glow animation to draw attention.
@@ -128,20 +132,22 @@ A secondary grid provides:
 
 ### 📉 Charts Tab
 
-Ten interactive charts powered by **Chart.js 4.4.1**, all themed to match the active dark/light mode and updated whenever the theme or filter changes.
+Twelve interactive charts powered by **Chart.js 4.4.1**, all themed to match the active dark/light mode and updated whenever the theme or filter changes.
 
 | # | Chart | Type | Description |
 |---|-------|------|-------------|
 | 1 | **Distance Over Time** | Line | Km per session plotted over time, with a dashed **flat average** reference line. |
 | 2 | **Unit Price Over Time** | Line | Price per unit plotted chronologically, with a dashed **5-point moving average** overlay. |
 | 3 | **Cost per Km Over Time** | Line | Cost/Km per session plotted over time, with a dashed **flat average** reference line. |
-| 4 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all records, not the filter), with bars color-coded by season. |
-| 5 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all records). |
-| 6 | **Average Consumption by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max consumption (kWh/100Km or L/100Km) per season (uses all records). |
-| 7 | **Average Efficiency by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max efficiency (Km/kWh or Km/L) per season (uses all records). |
-| 8 | **Average Cost per Km by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max €/Km per season (uses all records). |
-| 9 | **Spending by Season** | Doughnut | Share of total expenditure per season (%), with legend and tooltips showing exact amounts and percentages. |
-| 10 | **Refueling Frequency by Month** | Doughnut | Number of sessions per calendar month across all records, with a gradient color scheme. |
+| 4 | **Consumption Over Time** | Line | Energy or fuel consumption per session (kWh/100Km or L/100Km) plotted over time, with a dashed **flat average** reference line. Color: amber (`#FB923C`). |
+| 5 | **Efficiency Over Time** | Line | Per-session efficiency (Km/kWh or Km/L) plotted over time, with a dashed **flat average** reference line. Color: purple (`#A855F7`). |
+| 6 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all records, not the filter), with bars color-coded by season. |
+| 7 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all records). |
+| 8 | **Average Consumption by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max consumption (kWh/100Km or L/100Km) per season (uses all records). |
+| 9 | **Average Efficiency by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max efficiency (Km/kWh or Km/L) per season (uses all records). |
+| 10 | **Average Cost per Km by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max €/Km per season (uses all records). |
+| 11 | **Spending by Season** | Doughnut | Share of total expenditure per season (%), with legend and tooltips showing exact amounts and percentages. |
+| 12 | **Refueling Frequency by Month** | Doughnut | Number of sessions per calendar month across all records, with a gradient color scheme. |
 
 All charts feature:
 - 800ms entrance animation with `easeInOutQuart` easing.
@@ -161,16 +167,16 @@ All charts feature:
 │  Records │ Total Spent │ Total Km            │  ← Summary ribbon (always visible)
 │                                              │
 │  ┌──────────────────────────────────────┐    │
-│  │ ❄ 08/03/2026          🟢 €0.14/Km   │    │  ← Record card (season-colored border)
-│  │ 🚩 320 Km | 🔋 55 kWh |  €0.25/kWh  │    │
-│  │ € 13.75 💵  Shell Station 📍    📋  │    │
+│  │ ❄ 08/03/2026          🟢 €0.14/Km    │    │  ← Record card (season-colored border)
+│  │ 🚩 320 Km | 🔋 55 kWh |  💹 5.82 Km/kWh   │
+│  │ € 13.75 💵  Shell Station 📍     📋  │    │
 │  └──────────────────────────────────────┘    │
 │                                              │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination
 │                                              │
 │                                  [ + ]       │  ← Floating Action Button
 ├──────────────────────────────────────────────┤
-│  🏠 Refueling │ 📊 Statistics │ 📈 Charts   │  ← Bottom tab bar
+│  🏠 Refueling │ 📊 Statistics │ 📈 Charts    │  ← Bottom tab bar
 └──────────────────────────────────────────────┘
 ```
 
@@ -292,7 +298,7 @@ Each record is stored as a JSON object with the following fields:
   "unitPrice": 0.2500,
   "totalCost": 13.80,
   "costPerKm": 0.0431,
-  "location": "Shell Station A1",
+  "location": "EnelX Anagnina",
   "notes": "Optional free-text notes",
   "createdAt": "ISO-8601 timestamp",
   "updatedAt": "ISO-8601 timestamp"
@@ -363,31 +369,53 @@ Toggle between **Dark Mode** (default) and **Light Mode**. The toggle is availab
 
 All charts are rendered with **Chart.js 4.4.1** and re-rendered whenever the active filter changes or the theme is switched.
 
-### Line Charts (Charts 1–3)
+### Line Charts (Charts 1–5)
 
-The three line charts are rendered in this order inside the Charts tab:
+Five line charts are rendered at the top of the Charts tab:
 
-1. **Distance Over Time** (`chart-distance`) — rendered first.
-2. **Unit Price Over Time** (`chart-price`) — rendered second.
-3. **Cost per Km Over Time** (`chart-cpkm`) — rendered third.
+1. **Distance Over Time** (`chart-distance`) — Km per session over time.
+2. **Unit Price Over Time** (`chart-price`) — price per unit over time.
+3. **Cost per Km Over Time** (`chart-cpkm`) — cost/Km per session over time.
+4. **Consumption Over Time** (`chart-consumption`) — energy or fuel consumption per session expressed as kWh/100Km or L/100Km, plotted chronologically. Color: amber (`#FB923C`).
+5. **Efficiency Over Time** (`chart-efficiency`) — per-session vehicle efficiency expressed as Km/kWh or Km/L, plotted chronologically. Color: purple (`#A855F7`).
 
 Each line chart includes:
 - A **primary dataset** with gradient area fill and data-point dots.
-- A **secondary reference line** (dashed), which is either a rolling moving average (Chart 2 — Price) or a flat mean (Charts 1 and 3).
+- A **secondary reference line** (dashed), which is a rolling 5-point moving average for the Price chart (Chart 2), or a flat mean for all other line charts.
 - Responsive layout with `maintainAspectRatio: false` inside a 220px-tall container.
 
-### Bar Charts (Charts 4–8)
+#### 📊 Consumption Over Time (Chart 4)
 
-- **Chart 4 (Monthly Expenditure):** Horizontal bars, one per month-year combination, colored by the season of that month. Uses **all records** regardless of the active filter to provide a complete spending history.
-- **Chart 5 (Seasonal Price):** Grouped horizontal bar chart showing Min / Avg / Max unit prices per season, using all records.
-- **Chart 6 (Seasonal Consumption):** Grouped horizontal bar chart showing Min / Avg / Max consumption (kWh/100Km or L/100Km) per season, using all records.
-- **Chart 7 (Seasonal Efficiency):** Grouped horizontal bar chart showing Min / Avg / Max efficiency (Km/kWh or Km/L) per season, using all records.
-- **Chart 8 (Seasonal Cost per Km):** Grouped horizontal bar chart showing Min / Avg / Max €/Km per season, using all records.
+This chart tracks how efficiently the vehicle consumes energy or fuel on a per-session basis:
 
-### Doughnut Charts (Charts 9–10)
+- **Y-axis:** consumption rate in `kWh/100Km` (electric) or `L/100Km` (combustion), computed as `(quantity / distanceKm) × 100`.
+- **Primary line color:** amber (`#FB923C`) with a matching gradient fill.
+- **Reference line:** flat average of all session consumption values in the current filter period, rendered as a dashed amber-yellow line (`#F59E0B`).
+- **Tooltip:** shows the value formatted as `X.XX kWh/100Km` or `X.XX L/100Km`.
+- **Data scope:** uses the currently active filter (same as Charts 1–3).
 
-- **Chart 9 (Season Spending):** Cutout doughnut (65% inner radius) showing the percentage of total expenditure per season. Tooltips show absolute € amounts and percentages.
-- **Chart 10 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month across all records. Colors use an HSL gradient from cool blue to warm blue.
+#### 💹 Efficiency Over Time (Chart 5)
+
+This chart tracks how many kilometers the vehicle travels per unit of energy or fuel:
+
+- **Y-axis:** efficiency in `Km/kWh` (electric) or `Km/L` (combustion), computed as `distanceKm / quantity`.
+- **Primary line color:** purple (`#A855F7`) with a matching gradient fill.
+- **Reference line:** flat average of all session efficiency values in the current filter period, rendered as a dashed amber-yellow line (`#F59E0B`).
+- **Tooltip:** shows the value formatted as `X.XX Km/kWh` or `X.XX Km/L`.
+- **Data scope:** uses the currently active filter (same as Charts 1–3).
+
+### Bar Charts (Charts 6–10)
+
+- **Chart 6 (Monthly Expenditure):** Horizontal bars, one per month-year combination, colored by the season of that month. Uses **all records** regardless of the active filter to provide a complete spending history.
+- **Chart 7 (Seasonal Price):** Grouped horizontal bar chart showing Min / Avg / Max unit prices per season, using all records.
+- **Chart 8 (Seasonal Consumption):** Grouped horizontal bar chart showing Min / Avg / Max consumption (kWh/100Km or L/100Km) per season, using all records.
+- **Chart 9 (Seasonal Efficiency):** Grouped horizontal bar chart showing Min / Avg / Max efficiency (Km/kWh or Km/L) per season, using all records.
+- **Chart 10 (Seasonal Cost per Km):** Grouped horizontal bar chart showing Min / Avg / Max €/Km per season, using all records.
+
+### Doughnut Charts (Charts 11–12)
+
+- **Chart 11 (Season Spending):** Cutout doughnut (65% inner radius) showing the percentage of total expenditure per season. Tooltips show absolute € amounts and percentages.
+- **Chart 12 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month across all records. Colors use an HSL gradient from cool blue to warm blue.
 
 All charts are properly destroyed (`chart.destroy()`) before being re-created to prevent memory leaks and canvas conflicts.
 

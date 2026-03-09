@@ -263,7 +263,7 @@ html, body {
 .badge-mid { background: rgba(245,158,11,0.15); color: var(--warning); }
 .badge-bad { background: rgba(239,68,68,0.15); color: var(--danger); }
 
-.stat-chips { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.stat-chips { display: flex; gap: 3px; margin: 8px 0; flex-wrap: wrap; }
 .stat-chip {
   display: flex; align-items: center; gap: 4px;
   background: var(--bg-tertiary); border-radius: 8px;
@@ -278,7 +278,7 @@ html, body {
 .note-icon { margin-left: auto; font-size: 14px; line-height: 1; flex-shrink: 0; }
 
 .menu-btn {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  position: absolute; right: 7px; top: 50%; transform: translateY(-5%);
   width: 32px; height: 32px; border-radius: 8px;
   background: none; border: none; cursor: pointer;
   color: var(--text-muted); display: flex; align-items: center; justify-content: center;
@@ -316,20 +316,6 @@ html, body {
 .ribbon-item { flex: 1; text-align: center; }
 .ribbon-label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .ribbon-value { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--text-primary); margin-top: 2px; }
-
-/* SAMPLE BANNER */
-.sample-banner {
-  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
-  border-radius: var(--radius-md); padding: 12px 14px;
-  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
-  font-size: var(--text-sm); color: var(--text-secondary);
-}
-.sample-banner-close {
-  margin-left: auto; background: rgba(239,68,68,0.15); color: var(--danger);
-  border: none; border-radius: 6px; padding: 4px 10px;
-  font-size: var(--text-xs); cursor: pointer; font-family: var(--font-body); font-weight: 600;
-  white-space: nowrap;
-}
 
 /* STAT CARDS GRID */
 .stats-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
@@ -696,7 +682,6 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 <main id="app-content">
   <!-- TAB 1: REFUELING -->
   <div class="tab-panel active" id="panel-refueling" role="tabpanel" aria-label="Refueling">
-    <div id="sample-banner-wrap"></div>
     <div id="summary-ribbon-wrap"></div>
     <div id="records-list"></div>
     <div id="pagination-wrap"></div>
@@ -1013,19 +998,8 @@ function quantityLabel() { return `Quantity (${unitLabel()})`; }
 // RENDER: REFUELING TAB
 // ==============================
 function renderRefueling() {
-  renderSampleBanner();
   renderSummary();
   renderRecordList();
-}
-
-function renderSampleBanner() {
-  const hasSample = AppState.records.some(r => r._sample);
-  const wrap = document.getElementById('sample-banner-wrap');
-  if (!hasSample) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `<div class="sample-banner">
-    <span>📊 You are viewing sample data. Add your first real record to get started.</span>
-    <button class="sample-banner-close ripple-host" onclick="clearSampleData()" aria-label="Clear sample data">Clear Sample Data</button>
-  </div>`;
 }
 
 function renderSummary() {
@@ -1085,8 +1059,9 @@ function renderRecordList() {
         <span class="cost-badge ${badgeClass}">€ ${cpkm.toFixed(2)}/Km</span>
       </div>
       <div class="stat-chips">
-        <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
         <div class="stat-chip">🚩 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
+        <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
+        <div class="stat-chip">💹 <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
       </div>
       <div class="record-row" style="margin-top:4px">
         <div><span class="record-cost">€ ${r.totalCost.toFixed(2)}</span><span class="record-unit-price">💵 @ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
@@ -1133,13 +1108,6 @@ function toggleMenu(e, id) {
     </div>`;
   card.appendChild(dropdown);
   setTimeout(() => document.addEventListener('click', () => { dropdown.remove(); openDropdownId = null; }, {once:true}), 0);
-}
-
-function clearSampleData() {
-  AppState.records = AppState.records.filter(r => !r._sample);
-  saveRecords();
-  renderRefueling();
-  showToast('Sample data cleared', 'success');
 }
 
 // ==============================
@@ -1291,8 +1259,6 @@ function duplicateRecord() {
   const price = rec.unitPrice;
   const location = rec.location || '';
   const notes = rec.notes || '';
-  // Update the already-open form in place (do not close/reopen the modal).
-  // Reset form state exactly as openForm() does for a new record.
   const form = document.getElementById('refuel-form');
   form.reset();
   document.getElementById('computed-total').textContent = '—';
@@ -1305,21 +1271,13 @@ function duplicateRecord() {
   document.getElementById('label-quantity').textContent = `Quantity (${u})`;
   document.getElementById('label-price').textContent = `Price per ${u} (€)`;
   document.getElementById('form-modal-title').textContent = 'Duplicate Record';
-  // New record: no id, so Save will insert a fresh entry
   document.getElementById('field-id').value = '';
-  // 1a) Date set to today
   document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
-  // Set createdAt to the current instant (moment the duplicate is initiated)
   document.getElementById('field-created-at').value = new Date().toISOString();
-  // 1b) Distance left empty — user must fill it in
   document.getElementById('field-distance').value = '';
-  // 1c) Quantity left empty — user must fill it in
   document.getElementById('field-quantity').value = '';
-  // 1d) Copy Price (editable)
   document.getElementById('field-price').value = price;
-  // 1e) Copy Location (editable)
   document.getElementById('field-location').value = location;
-  // 1f) Copy Notes (editable)
   document.getElementById('field-notes').value = notes;
   document.getElementById('notes-count').textContent = notes.length;
   updateComputed();
@@ -1511,7 +1469,7 @@ function renderCharts() {
   wrap.innerHTML = `
     <div class="chart-card"><div class="chart-title">Distance Over Time (Km)</div><div class="chart-wrap"><canvas id="chart-distance"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Unit Price Over Time (€/${unitLabel()})</div><div class="chart-wrap"><canvas id="chart-price"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Cost per Km Over Time (€)</div><div class="chart-wrap"><canvas id="chart-cpkm"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Cost per Km Over Time (€/Km)</div><div class="chart-wrap"><canvas id="chart-cpkm"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Monthly Total Expenditure (€)</div><div class="chart-wrap-tall"><canvas id="chart-monthly"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Average Price by Season (€)</div><div class="chart-wrap"><canvas id="chart-season"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Average Consumption by Season (${unitLabel()}/100Km)</div><div class="chart-wrap"><canvas id="chart-season-cons"></canvas></div></div>
@@ -1549,7 +1507,7 @@ function renderCharts() {
 
   const sorted = [...recs].sort((a,b) => a.date.localeCompare(b.date));
 
-  // CHART 1: Price over time
+  // CHART: Price over time
   destroyChart('chart-price');
   if (sorted.length) {
     const labels = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
@@ -1566,7 +1524,7 @@ function renderCharts() {
     }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` € ${ctx.raw.toFixed(2)}/${unitLabel()}` } } } } });
   }
 
-  // CHART 2: Cost per Km
+  // CHART: Cost per Km
   destroyChart('chart-cpkm');
   if (sorted.length) {
     const labels2 = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
@@ -1583,7 +1541,7 @@ function renderCharts() {
    }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}` } } } } });
   }
 
-  // CHART 3: Distance Over Time
+  // CHART: Distance Over Time
   destroyChart('chart-distance');
   if (sorted.length) {
     const labels3 = sorted.map(r => r.date.slice(8) + '/' + r.date.slice(5,7));
@@ -1600,7 +1558,7 @@ function renderCharts() {
     }, options: { ...baseOpts(), plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.raw.toFixed(1)} Km` } } } } });
   }
 
-  // CHART 3: Monthly Expenditure (horizontal bar)
+  // CHART: Monthly Expenditure (horizontal bar)
   destroyChart('chart-monthly');
   const monthly = {};
   AppState.records.forEach(r => {
@@ -1617,7 +1575,7 @@ function renderCharts() {
     }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:false}, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` € ${ctx.raw.toFixed(2)}` } } } } });
   }
 
-  // CHART 4: Season grouped bar
+  // CHART: Season grouped bar
   destroyChart('chart-season');
   const seasons = ['winter','spring','summer','autumn'];
   const seaStats = seasons.map(s => computeStats(AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s)));
@@ -1631,7 +1589,7 @@ function renderCharts() {
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
     tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}` } } } } });
 
-  // CHART 4b: Average Consumption by Season (kWh/100Km or L/100Km)
+  // CHART: Average Consumption by Season (kWh/100Km or L/100Km)
   destroyChart('chart-season-cons');
   const seaStatsCons = seasons.map(s => {
     const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
@@ -1650,7 +1608,7 @@ function renderCharts() {
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
     tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} ${consUnit}` } } } } });
 
-  // CHART 4c: Average Efficiency by Season (Km/kWh or Km/L)
+  // CHART: Average Efficiency by Season (Km/kWh or Km/L)
   destroyChart('chart-season-eff');
   const seaStatsEff = seasons.map(s => {
     const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
@@ -1669,7 +1627,7 @@ function renderCharts() {
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
     tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} ${effUnit}` } } } } });
 
-  // CHART 4c: Average Cost per Km by Season (€/Km)
+  // CHART: Average Cost per Km by Season (€/Km)
   destroyChart('chart-season-cpkm');
   const seaStatsCpkm = seasons.map(s => {
     const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
@@ -1687,7 +1645,7 @@ function renderCharts() {
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
     tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: € ${ctx.raw.toFixed(2)}/Km` } } } } });
 
-  // CHART 5: Donut season spending
+  // CHART: Donut season spending
   destroyChart('chart-donut-season');
   const seaCosts = seasons.map(s => AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s).reduce((a,r)=>a+r.totalCost,0));
   const totalSpent = seaCosts.reduce((a,b)=>a+b,0);
@@ -1702,7 +1660,7 @@ function renderCharts() {
     }
   } });
 
-  // CHART 6: Donut monthly frequency
+  // CHART: Donut monthly frequency
   destroyChart('chart-donut-month');
   const mCounts = Array.from({length:12},(_,m) => AppState.records.filter(r=>new Date(r.date+'T00:00:00').getMonth()===m).length);
   const mGrad = Array.from({length:12},(_,i) => `hsl(${200+i*12},70%,${50-i*2}%)`);
@@ -1915,71 +1873,6 @@ function renderAll() {
   if (AppState.activeTab === 'charts') renderCharts();
 }
 
-// ==============================
-// SAMPLE DATA
-// ==============================
-function generateSampleData() {
-  const now = new Date();
-  const recs = [];
-  for (let i = 23; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 10+Math.floor(Math.random()*10));
-    const month = d.getMonth();
-    const season = getSeason(month);
-    const basePrices = { winter:0.28, spring:0.24, summer:0.22, autumn:0.26 };
-    const basePrice = basePrices[season] + (Math.random()-0.5)*0.04;
-    const dist = 250 + Math.random()*200;
-    const qty = dist * (AppState.settings.unit==='kWh' ? 0.18 : 0.065) * (0.9+Math.random()*0.2);
-    const total = qty * basePrice;
-    const dateStr = d.toISOString().split('T')[0];
-    const now2 = new Date().toISOString();
-    recs.push({
-      id: uuid(), date: dateStr, distanceKm: parseFloat(dist.toFixed(1)),
-      quantity: parseFloat(qty.toFixed(2)), unitPrice: parseFloat(basePrice.toFixed(2)),
-      totalCost: parseFloat(total.toFixed(2)), costPerKm: parseFloat((total/dist).toFixed(2)),
-      location: ['Shell Station A1','ENI Via Roma','Q8 Highway','Agip SS1','Tamoil Centro'][Math.floor(Math.random()*5)],
-      notes: null, createdAt: now2, updatedAt: now2, _sample: true
-    });
-  }
-  return recs;
-}
-
-// ==============================
-// PWA: MANIFEST + SW
-// ==============================
-function initPWA() {
-  // Manifest
-  const manifest = {
-    name: 'Charge Master',
-    short_name: 'ChargeMaster',
-    description: 'Vehicle Fuel & Energy Consumption Tracker',
-    start_url: './',
-    display: 'standalone',
-    background_color: '#0A0E1A',
-    theme_color: '#3B82F6',
-    orientation: 'portrait-primary',
-    icons: [
-      { src: genIcon(192), sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: genIcon(512), sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  const link = document.createElement('link');
-  link.rel = 'manifest'; link.href = URL.createObjectURL(blob);
-  document.head.appendChild(link);
-
-  // Service Worker
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'chargemaster-v1';
-self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./',location.pathname]))); });
-self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
-self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))); });
-    `;
-    const swBlob = new Blob([swCode], {type:'application/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
-  }
-}
-
 function genIcon(size) {
   const canvas = document.createElement('canvas');
   canvas.width = size; canvas.height = size;
@@ -2022,14 +1915,6 @@ function addThemeMeta() {
   addThemeMeta();
   loadData();
   applyTheme(AppState.settings.theme);
-
-  // Seed sample data if first launch
-  if (!AppState.records.length) {
-    //AppState.records = generateSampleData();
-    //saveRecords();
-  }
-
-  initPWA();
   renderAll();
 })();
 </script>

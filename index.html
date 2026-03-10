@@ -1064,7 +1064,7 @@ function renderRecordList() {
         <div class="stat-chip">♻️ <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
       </div>
       <div class="record-row" style="margin-top:4px">
-        <div><span class="record-cost">€ ${r.totalCost.toFixed(2)}</span><span class="record-unit-price">💵 @ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
+        <div><span class="record-cost">€ ${r.totalCost.toFixed(2)} 💰</span><span class="record-unit-price">@ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
       </div>
       ${loc}
       <button class="menu-btn ripple-host" aria-label="Record options" onclick="toggleMenu(event,'${r.id}')">

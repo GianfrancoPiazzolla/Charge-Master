@@ -1061,7 +1061,7 @@ function renderRecordList() {
       <div class="stat-chips">
         <div class="stat-chip">🚩 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
         <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
-        <div class="stat-chip">🚥 <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
+        <div class="stat-chip">♻️ <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
       </div>
       <div class="record-row" style="margin-top:4px">
         <div><span class="record-cost">€ ${r.totalCost.toFixed(2)}</span><span class="record-unit-price">💵 @ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
@@ -1656,9 +1656,9 @@ function renderCharts() {
   AppState.charts['chart-season-eff'] = new Chart(document.getElementById('chart-season-eff'), { type:'bar', data: {
     labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
     datasets: [
-      { label:'Min', data: seaStatsEff.map(s=>s?parseFloat(s.min.toFixed(2)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
+      { label:'Min', data: seaStatsEff.map(s=>s?parseFloat(s.min.toFixed(2)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
       { label:'Avg', data: seaStatsEff.map(s=>s?parseFloat(s.avg.toFixed(2)):0), backgroundColor: 'rgba(245,158,11,0.7)', borderRadius:4 },
-      { label:'Max', data: seaStatsEff.map(s=>s?parseFloat(s.max.toFixed(2)):0), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius:4 },
+      { label:'Max', data: seaStatsEff.map(s=>s?parseFloat(s.max.toFixed(2)):0), backgroundColor: 'rgba(16,185,129,0.7)', borderRadius:4 },
     ]
   }, options: { ...baseOpts(), indexAxis:'y', plugins: { ...baseOpts().plugins, legend:{display:true, labels:{color:textColor, font:{family:fontFamily}}},
     tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)} ${effUnit}` } } } } });

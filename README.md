@@ -208,35 +208,35 @@ All charts feature:
 
 ```
 ┌──────────────────────────────────────────────┐
-│  ⚡ CHARGE MASTER                 ⚙  🌙  ℹ  │  ← Fixed header with Settings, Theme toggle, About
+│  ⚡ CHARGE MASTER               ⚙️  🌙  ℹ️ │  ← Fixed header with Settings, Theme toggle, About
 ├──────────────────────────────────────────────┤
-│                                              │
+...                                          ...
 │  🚗 My Vehicles                         [+] │  ← Vehicles tab header with Add button
 │                                              │
 │  ┌──────────────────────────────────────┐    │
 │  │ 🚗  Tesla Model S                   │    │  ← Vehicle card (active, blue border)
 │  │     🔋 kWh · 24 records              │    │
-│  │                         [✓] [✏] [🗑]│    │
+│  │                        [✓] [✏] [🗑] │    │
 │  └──────────────────────────────────────┘    │
 │  ┌──────────────────────────────────────┐    │
 │  │ 🚗  Fiat Punto                      │    │  ← Inactive vehicle card
 │  │     ⛽ Liters · 8 records            │    │
-│  │                          [ ] [✏] [🗑]│    │
+│  │                         [ ] [✏] [🗑] │    │
 │  └──────────────────────────────────────┘    │
-│                                              │
-│  [ Records | Total Spent | Total Km ]        │  ← Summary ribbon (Refueling tab)
+...                                          ...
+│             Tesla Model S (BEV)              │
+│     [ Records | Total Spent | Total Km ]     │  ← Summary ribbon (Refueling tab)
 │                                              │
 │  ┌──────────────────────────────────────┐    │
-│  │ ❄ 08/03/2026         🟢 €0.14/Km    │    │  ← Record card (season-colored border)
-│  │ 🚩 320Km | 🔋 55kWh | 💹 5.82Km/kWh  │    │
+│  │ 08/03/2026               🟢 €0.14/Km │    │  ← Record card (season-colored border)
+│  │ 🚩 320Km | 🔋 55kWh | ♻️ 5.82Km/kWh  │    │
 │  │ € 13.75 💵  Shell Station 📍     📋  │    │
 │  └──────────────────────────────────────┘    │
-│                                              │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination
-│                                              │
+...                                          ...
 │                                  [ + ]       │  ← Floating Action Button
 ├──────────────────────────────────────────────┤
-│ 🚗 Vehicles │ ⛽ Refueling │ 📊 Stats │ 📈  │  ← Bottom tab bar (4 tabs)
+│ 🚗 Veh. │ ⛽ Refuel. │ 📊 Stats │ 📈 Charts │  ← Bottom tab bar (4 tabs)
 └──────────────────────────────────────────────┘
 ```
 

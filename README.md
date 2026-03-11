@@ -4,9 +4,9 @@
 
 ### Vehicle Fuel & Energy Consumption Tracker
 
-**A premium Progressive Web App (PWA) for tracking fuel and energy consumption of any vehicle — electric or combustion.**
+**A premium Progressive Web App (PWA) for tracking fuel and energy consumption of any vehicle — electric or combustion. Supports multiple vehicle profiles, each with independent records and unit preferences.**
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.1.0-blue?style=flat-square)
 ![PWA](https://img.shields.io/badge/PWA-ready-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-orange?style=flat-square)
 ![Offline](https://img.shields.io/badge/offline-supported-success?style=flat-square)
@@ -20,7 +20,7 @@
 
 - [Overview](#-overview)
 - [Features](#-features)
-- [Screenshots & Interface](#-interface-overview)
+- [Interface Overview](#-interface-overview)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
 - [Usage Guide](#-usage-guide)
@@ -46,9 +46,56 @@
 
 ## ✨ Features
 
+### 🚗 Vehicle Profile Management
+
+- **🏎️ Multiple vehicle profiles** — register as many vehicles as needed, each with a custom name and preferred measurement unit.
+- **➕ Add a new vehicle** via the **"+ Add Vehicle"** button in the Vehicles tab header, or via the empty-state call-to-action when no vehicles exist yet.
+- **✏️ Edit any vehicle** — tap the edit (pencil) icon on a vehicle card to update its name or switch its unit preference between kWh and Liters.
+- **✅ Select the active vehicle** — tap the checkmark button on any vehicle card to make it the active profile. The active vehicle card is highlighted with a blue border accent. All refueling records, statistics, and charts shown throughout the app are scoped to the active vehicle.
+- **🗑️ Delete a vehicle** — tap the trash icon on a vehicle card. An inline confirmation prompt appears, warning how many associated records will also be deleted. Deletion removes both the vehicle profile and all its linked records.
+- **📊 Record count badge** — each vehicle card displays the number of refueling/charging records associated with it (e.g. `🔋 kWh · 12 records`).
+- **📡 Empty state** — when no vehicles have been added yet, a full illustrated placeholder is shown with a "Add Vehicle" call-to-action button.
+- **🔔 Toast notifications** — every vehicle action (add, update, select, delete) fires a non-intrusive toast notification.
+
+#### Vehicle Profile Form
+
+The vehicle form is presented as a bottom sheet modal with the following fields:
+
+| Field | Description |
+|---|---|
+| **Name** | Free-text name for the vehicle (max 60 characters). Required. |
+| **Preferred Unit** | Toggle pill: **🔋 kWh** (electric) or **⛽ Liters** (combustion). Determines labels across records, statistics, and charts for this vehicle. |
+
+- The form title changes dynamically between **"Add Vehicle"** and **"Edit Vehicle"** depending on context.
+- If the name field is left blank and the user taps **Save Vehicle**, the field shakes with a validation animation and the save is blocked.
+- On save, the modal closes, the vehicle list re-renders, and the Refueling tab updates to reflect the active vehicle.
+
+#### Data Isolation per Vehicle
+
+Every refueling/charging record is linked to a specific vehicle via a `vehicleId` field. When a vehicle is selected as active:
+
+- The **Refueling tab** shows only records belonging to that vehicle.
+- The **Summary ribbon** (total records, total spent, total Km) reflects only that vehicle's data.
+- The **Statistics tab** computes all metrics (min/avg/max price, total distance, average consumption, etc.) using only that vehicle's records.
+- The **Charts tab** renders all 12 charts using only that vehicle's records.
+
+Switching the active vehicle instantly updates all tabs and charts.
+
+#### Migration from Pre-Profile Versions
+
+When loading a data file exported from Charge Master v1.0.0 (before vehicle profiles were introduced), the app automatically detects that no `vehicles` array is present and performs a one-time migration:
+
+- A `"Default"` vehicle profile is created with `unit: 'kWh'`.
+- All existing records are assigned to this default profile via `vehicleId`.
+- No data is lost.
+
+The same migration logic applies when importing a legacy JSON export file.
+
+---
+
 ### 🗂️ Record Management
 
-- **➕ Add refueling/charging records** via a floating action button (FAB) that is always accessible.
+- **➕ Add refueling/charging records** via a floating action button (FAB) that is always accessible. If no vehicle is selected, the app redirects to the Vehicles tab with a warning toast.
 - **✏️ Edit any existing record** by tapping on it in the list — the same form is reused for both creation and editing.
 - **📋 Duplicate any existing record** via the **Duplicate Record** button available in the edit form. See [Duplicating a Record](#-duplicating-a-record) for full details.
 - **🗑️ Delete individual records** with an inline two-step confirmation to prevent accidental deletion.
@@ -56,7 +103,7 @@
 - **🏷️ Each record stores:**
   - 📅 Date of the refueling/charging session
   - 📏 Distance traveled since the last session (in Km)
-  - 🔋 / ⛽ Energy or fuel quantity (kWh or Liters, switchable globally)
+  - 🔋 / ⛽ Energy or fuel quantity (kWh or Liters, per the active vehicle's unit)
   - 💶 Unit price (€ per kWh or € per Liter)
   - 💰 Total cost (auto-computed in real time)
   - 📊 Cost per Km (auto-computed in real time)
@@ -82,16 +129,16 @@
   - 🚩 **Distance** — kilometers traveled for that session.
   - 🔋 / ⛽ **Quantity** — energy (kWh) or fuel (Liters) consumed.
   - 💹 **Efficiency** — Km per unit (Km/kWh or Km/L), computed as `distanceKm / quantity`.
-- **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** across all records.
-- **📊 Sample data banner:** When sample records are present (flagged with `_sample: true`), a dismissable info banner is shown at the top of the Refueling tab inviting the user to clear the sample data and start with real records. See [Sample Data Banner](#-sample-data-banner).
-- **📡 Empty state:** When no records exist, an illustrated placeholder is shown with a call-to-action button to add the first record, and the FAB pulses with a glow animation to draw attention.
-- **🔔 Toast notifications:** Non-intrusive, auto-dismissing toast messages (max 3 at once) appear after every user action (save, delete, export, import), with ✓ / ✕ / ⚠ icons.
+- **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** for the active vehicle.
+- **📊 Sample data banner:** When sample records are present (flagged with `_sample: true`), a dismissable info banner is shown at the top of the Refueling tab inviting the user to clear the sample data and start with real records.
+- **📡 Empty state:** When no records exist for the active vehicle, an illustrated placeholder is shown. If no vehicle is selected at all, the empty state instead prompts the user to navigate to the Vehicles tab.
+- **🔔 Toast notifications:** Non-intrusive, auto-dismissing toast messages (max 3 at once) appear after every user action (save, delete, export, import, vehicle changes), with ✓ / ✕ / ⚠ icons.
 - **⚡ Ripple effect:** All interactive buttons and tappable elements feature a touch-responsive radial ripple animation for tactile feedback.
 - **🃏 Card hover animations:** All cards lift slightly (`translateY(-2px)`) on hover with a shadow effect for depth.
 
 ### 📊 Statistics Tab
 
-The Statistics tab provides an analytics view filtered by a user-selectable time period.
+The Statistics tab provides an analytics view filtered by a user-selectable time period, scoped to the **active vehicle profile**.
 
 #### 🔍 Filter Bar
 
@@ -132,7 +179,7 @@ A secondary grid provides:
 
 ### 📉 Charts Tab
 
-Twelve interactive charts powered by **Chart.js 4.4.1**, all themed to match the active dark/light mode and updated whenever the theme or filter changes.
+Twelve interactive charts powered by **Chart.js 4.4.1**, all themed to match the active dark/light mode and scoped to the **active vehicle profile**. Charts update whenever the theme, filter, or active vehicle changes.
 
 | # | Chart | Type | Description |
 |---|-------|------|-------------|
@@ -141,13 +188,13 @@ Twelve interactive charts powered by **Chart.js 4.4.1**, all themed to match the
 | 3 | **Cost per Km Over Time** | Line | Cost/Km per session plotted over time, with a dashed **flat average** reference line. |
 | 4 | **Consumption Over Time** | Line | Energy or fuel consumption per session (kWh/100Km or L/100Km) plotted over time, with a dashed **flat average** reference line. Color: amber (`#FB923C`). |
 | 5 | **Efficiency Over Time** | Line | Per-session efficiency (Km/kWh or Km/L) plotted over time, with a dashed **flat average** reference line. Color: purple (`#A855F7`). |
-| 6 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all records, not the filter), with bars color-coded by season. |
-| 7 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all records). |
-| 8 | **Average Consumption by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max consumption (kWh/100Km or L/100Km) per season (uses all records). |
-| 9 | **Average Efficiency by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max efficiency (Km/kWh or Km/L) per season (uses all records). |
-| 10 | **Average Cost per Km by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max €/Km per season (uses all records). |
+| 6 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all vehicle records, not the filter), with bars color-coded by season. |
+| 7 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all vehicle records). |
+| 8 | **Average Consumption by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max consumption (kWh/100Km or L/100Km) per season (uses all vehicle records). |
+| 9 | **Average Efficiency by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max efficiency (Km/kWh or Km/L) per season (uses all vehicle records). |
+| 10 | **Average Cost per Km by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max €/Km per season (uses all vehicle records). |
 | 11 | **Spending by Season** | Doughnut | Share of total expenditure per season (%), with legend and tooltips showing exact amounts and percentages. |
-| 12 | **Refueling Frequency by Month** | Doughnut | Number of sessions per calendar month across all records, with a gradient color scheme. |
+| 12 | **Refueling Frequency by Month** | Doughnut | Number of sessions per calendar month across all vehicle records, with a gradient color scheme. |
 
 All charts feature:
 - 800ms entrance animation with `easeInOutQuart` easing.
@@ -164,11 +211,24 @@ All charts feature:
 │  ⚡ CHARGE MASTER                 ⚙  🌙  ℹ  │  ← Fixed header with Settings, Theme toggle, About
 ├──────────────────────────────────────────────┤
 │                                              │
-│  Records │ Total Spent │ Total Km            │  ← Summary ribbon (always visible)
+│  🚗 My Vehicles                         [+] │  ← Vehicles tab header with Add button
 │                                              │
 │  ┌──────────────────────────────────────┐    │
-│  │ ❄ 08/03/2026          🟢 €0.14/Km    │    │  ← Record card (season-colored border)
-│  │ 🚩 320 Km | 🔋 55 kWh |  💹 5.82 Km/kWh   │
+│  │ 🚗  Tesla Model S                   │    │  ← Vehicle card (active, blue border)
+│  │     🔋 kWh · 24 records              │    │
+│  │                         [✓] [✏] [🗑]│    │
+│  └──────────────────────────────────────┘    │
+│  ┌──────────────────────────────────────┐    │
+│  │ 🚗  Fiat Punto                      │    │  ← Inactive vehicle card
+│  │     ⛽ Liters · 8 records            │    │
+│  │                          [ ] [✏] [🗑]│    │
+│  └──────────────────────────────────────┘    │
+│                                              │
+│  [ Records | Total Spent | Total Km ]        │  ← Summary ribbon (Refueling tab)
+│                                              │
+│  ┌──────────────────────────────────────┐    │
+│  │ ❄ 08/03/2026         🟢 €0.14/Km    │    │  ← Record card (season-colored border)
+│  │ 🚩 320Km | 🔋 55kWh | 💹 5.82Km/kWh  │    │
 │  │ € 13.75 💵  Shell Station 📍     📋  │    │
 │  └──────────────────────────────────────┘    │
 │                                              │
@@ -176,7 +236,7 @@ All charts feature:
 │                                              │
 │                                  [ + ]       │  ← Floating Action Button
 ├──────────────────────────────────────────────┤
-│  🏠 Refueling │ 📊 Statistics │ 📈 Charts    │  ← Bottom tab bar
+│ 🚗 Vehicles │ ⛽ Refueling │ 📊 Stats │ 📈  │  ← Bottom tab bar (4 tabs)
 └──────────────────────────────────────────────┘
 ```
 
@@ -188,7 +248,7 @@ All charts feature:
 |---|---|
 | 🌐 **Vanilla HTML/CSS/JS** | The entire app is a single `index.html` file — no build step, no framework. |
 | 📦 **Chart.js 4.4.1** | All charts (loaded from cdnjs CDN). |
-| 💾 **localStorage** | Persistent client-side storage for records and settings. |
+| 💾 **localStorage** | Persistent client-side storage for records, vehicle profiles, and settings. |
 | 🔧 **Service Worker** | Enables offline functionality and PWA installability. |
 | 🎨 **CSS Custom Properties** | Full theming system (dark/light) using CSS variables. |
 | 🖋️ **Google Fonts** | Rajdhani (display), DM Sans (body), JetBrains Mono (data/mono). |
@@ -202,7 +262,7 @@ All charts feature:
 
 ```bash
 # Clone or download the repository
-git clone https://github.com/your-username/charge-master.git
+git clone https://github.com/GianfrancoPiazzolla/Charge-Master.git
 
 # Open the file directly in your browser
 open index.html
@@ -235,18 +295,49 @@ Upload `index.html` to any static hosting service (GitHub Pages, Netlify, Vercel
 
 ## 📖 Usage Guide
 
+### 🚗 Setting Up Your First Vehicle
+
+Before adding any refueling records, you need at least one vehicle profile. On first launch, the app opens on the **Vehicles tab** with an empty state.
+
+1. Tap **+ Add Vehicle** (empty-state button or the `+` icon in the section header).
+2. Enter a **Name** for the vehicle (e.g. "Tesla Model S", "Fiat Punto").
+3. Select the **Preferred Unit**: 🔋 **kWh** for electric vehicles, ⛽ **Liters** for combustion vehicles.
+4. Tap **Save Vehicle**. The vehicle is created and automatically set as the active profile.
+
+### ✅ Switching the Active Vehicle
+
+1. Open the **Vehicles tab** from the bottom tab bar.
+2. Tap the **checkmark button** on any vehicle card.
+3. A success toast confirms the selection. All tabs (Refueling, Statistics, Charts) immediately update to show data for the newly selected vehicle.
+
+### ✏️ Editing a Vehicle
+
+1. Open the **Vehicles tab**.
+2. Tap the **pencil icon** on the vehicle card you want to edit.
+3. Modify the name or preferred unit, then tap **Save Vehicle**.
+
+### 🗑️ Deleting a Vehicle
+
+1. Open the **Vehicles tab**.
+2. Tap the **trash icon** on the vehicle card.
+3. An inline confirmation prompt appears, indicating how many associated records will also be permanently deleted.
+4. Tap **Delete** to confirm, or **Cancel** to abort.
+
+> ⚠️ Deleting a vehicle removes all its linked refueling records. This action is irreversible.
+
 ### ➕ Adding a Record
 
-1. Tap the **blue `+` floating button** (bottom-right corner).
-2. A bottom sheet slides up with the entry form.
-3. Fill in:
+1. Make sure the desired vehicle is set as active (see [Switching the Active Vehicle](#-switching-the-active-vehicle)).
+2. Tap the **blue `+` floating button** (bottom-right corner). If no vehicle is active, the app redirects to the Vehicles tab with a warning.
+3. A bottom sheet slides up with the entry form.
+4. Fill in:
    - **Date** — the date of the refueling/charging session.
    - **Distance (Km)** — the kilometers traveled since the last session.
-   - **Quantity** — energy (kWh) or fuel (Liters) consumed.
+   - **Quantity** — energy (kWh) or fuel (Liters) consumed, based on the active vehicle's unit.
    - **Price per unit** — the price you paid per kWh or per Liter.
-4. The **Total Cost** and **Cost per Km** fields update automatically as you type.
-5. Optionally add a **Location** (e.g. station name) and **Notes**.
-6. Tap **Save Record**. A toast confirms success and haptic feedback fires on mobile devices (`navigator.vibrate`).
+5. The **Total Cost** and **Cost per Km** fields update automatically as you type.
+6. Optionally add a **Location** (e.g. station name) and **Notes**.
+7. Tap **Save Record**. A toast confirms success and haptic feedback fires on mobile devices (`navigator.vibrate`).
 
 ### ✏️ Editing a Record
 
@@ -280,18 +371,39 @@ The **Duplicate Record** feature allows quickly creating a new entry pre-filled 
 
 ### 🔄 Switching Between Tabs
 
-- Tap the **bottom tab bar** icons: Refueling 🏠 | Statistics 📊 | Charts 📈.
+- Tap the **bottom tab bar** icons: Vehicles 🚗 | Refueling ⛽ | Statistics 📊 | Charts 📈.
 - Or **swipe left/right** anywhere in the content area (horizontal swipe > 50px, vertical displacement < 60px).
 
 ---
 
 ## 🗄️ Data Model
 
-Each record is stored as a JSON object with the following fields:
+### Vehicle Profile
+
+Each vehicle profile is stored as a JSON object under the `chargemaster_v1_vehicles` localStorage key:
 
 ```json
 {
   "id": "uuid-v4-string",
+  "name": "Tesla Model S",
+  "unit": "kWh"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | UUID v4 — unique identifier for the vehicle. |
+| `name` | string | Display name of the vehicle (max 60 characters). |
+| `unit` | `"kWh"` \| `"L"` | Preferred measurement unit. Drives all labels, statistics, and chart axes for this vehicle. |
+
+### Refueling Record
+
+Each record is stored as a JSON object under the `chargemaster_v1_records` localStorage key:
+
+```json
+{
+  "id": "uuid-v4-string",
+  "vehicleId": "uuid-v4-string",
   "date": "YYYY-MM-DD",
   "distanceKm": 320.0,
   "quantity": 55.20,
@@ -305,7 +417,15 @@ Each record is stored as a JSON object with the following fields:
 }
 ```
 
-Records are stored in `localStorage` under the key `chargemaster_v1_records` as a JSON array. Settings are stored under `chargemaster_v1_settings`.
+The `vehicleId` field links each record to its vehicle profile. Records whose `vehicleId` does not match any existing vehicle are automatically reassigned to the first available vehicle on load (migration safeguard).
+
+### localStorage Keys
+
+| Key | Contents |
+|---|---|
+| `chargemaster_v1_vehicles` | JSON array of vehicle profile objects. |
+| `chargemaster_v1_records` | JSON array of refueling/charging record objects. |
+| `chargemaster_v1_settings` | JSON object with `{ theme, schemaVersion }`. |
 
 ---
 
@@ -327,14 +447,6 @@ Charge Master is a fully installable **Progressive Web App**:
 
 Access Settings via the **⚙ gear icon** in the top-right header.
 
-### ⚡ / ⛽ Preferred Unit
-
-Toggle between two tracking modes:
-- **🔋 kWh** — for electric vehicles (BEV). Labels throughout the app update to show kWh, Km/kWh, and kWh/100Km.
-- **⛽ Liters** — for ICE vehicles. Labels update to show L, Km/L, and L/100Km.
-
-Changing the unit is instant and affects all labels, forms, statistics, and chart tooltips throughout the app.
-
 ### 🌙 / ☀️ Display Mode
 
 Toggle between **Dark Mode** (default) and **Light Mode**. The toggle is available both in the Settings sheet and via the moon/sun icon in the header. Theme changes are saved to `localStorage` and re-applied on every subsequent load.
@@ -347,27 +459,39 @@ Toggle between **Dark Mode** (default) and **Light Mode**. The toggle is availab
 
 - Go to **Settings → Export All Records (JSON)**.
 - A `.json` file named `chargemaster_export_YYYY-MM-DD.json` is automatically downloaded.
-- The export envelope includes metadata: `exportedAt`, `appVersion`, `recordCount`, `unit`, and the full `records` array.
+- The export envelope includes metadata: `exportedAt`, `appVersion`, `vehicles` (array of vehicle profiles with record counts), and the full `records` array.
+
+```json
+{
+  "exportedAt": "ISO-8601 timestamp",
+  "appVersion": "1.1.0",
+  "vehicles": [
+    { "vehicleId": "uuid", "vehicleName": "Tesla Model S", "unit": "kWh", "recordCount": 24 }
+  ],
+  "records": [ ... ]
+}
+```
 
 ### 📥 Import
 
 - Go to **Settings → Import Records from File**.
 - Select a `.json` file previously exported from Charge Master (or a raw array of valid record objects).
 - A dialog asks how to handle the import:
-  - **⚠ Overwrite All** — replaces all existing records with the imported ones (irreversible).
-  - **✓ Merge** — adds only records whose `id` is not already present in the local database (deduplication by UUID).
+  - **⚠ Overwrite All** — replaces all existing records and vehicles with the imported ones (irreversible).
+  - **✓ Merge** — adds only records whose `id` is not already present in the local database (deduplication by UUID). Vehicle profiles present in the import file but not in the local database are also added.
+- **Legacy file handling:** If the imported file does not contain a `vehicles` array (exported from v1.0.0), a `"Default"` vehicle profile is automatically created and all imported records are assigned to it.
 - If the file is malformed or contains no valid records, an error toast is shown.
 
 ### 🗑️ Delete All Records
 
 - Go to **Settings → Delete All Records**.
-- An inline confirmation prompt appears. Confirm to permanently erase all data from `localStorage`.
+- An inline confirmation prompt appears. Confirm to permanently erase all refueling/charging records from `localStorage`. Vehicle profiles are not deleted by this action.
 
 ---
 
 ## 📉 Charts & Visualizations
 
-All charts are rendered with **Chart.js 4.4.1** and re-rendered whenever the active filter changes or the theme is switched.
+All charts are rendered with **Chart.js 4.4.1**, scoped to the **active vehicle**, and re-rendered whenever the active filter, theme, or active vehicle changes.
 
 ### Line Charts (Charts 1–5)
 
@@ -386,36 +510,30 @@ Each line chart includes:
 
 #### 📊 Consumption Over Time (Chart 4)
 
-This chart tracks how efficiently the vehicle consumes energy or fuel on a per-session basis:
-
 - **Y-axis:** consumption rate in `kWh/100Km` (electric) or `L/100Km` (combustion), computed as `(quantity / distanceKm) × 100`.
 - **Primary line color:** amber (`#FB923C`) with a matching gradient fill.
 - **Reference line:** flat average of all session consumption values in the current filter period, rendered as a dashed amber-yellow line (`#F59E0B`).
 - **Tooltip:** shows the value formatted as `X.XX kWh/100Km` or `X.XX L/100Km`.
-- **Data scope:** uses the currently active filter (same as Charts 1–3).
 
 #### 💹 Efficiency Over Time (Chart 5)
-
-This chart tracks how many kilometers the vehicle travels per unit of energy or fuel:
 
 - **Y-axis:** efficiency in `Km/kWh` (electric) or `Km/L` (combustion), computed as `distanceKm / quantity`.
 - **Primary line color:** purple (`#A855F7`) with a matching gradient fill.
 - **Reference line:** flat average of all session efficiency values in the current filter period, rendered as a dashed amber-yellow line (`#F59E0B`).
 - **Tooltip:** shows the value formatted as `X.XX Km/kWh` or `X.XX Km/L`.
-- **Data scope:** uses the currently active filter (same as Charts 1–3).
 
 ### Bar Charts (Charts 6–10)
 
-- **Chart 6 (Monthly Expenditure):** Horizontal bars, one per month-year combination, colored by the season of that month. Uses **all records** regardless of the active filter to provide a complete spending history.
-- **Chart 7 (Seasonal Price):** Grouped horizontal bar chart showing Min / Avg / Max unit prices per season, using all records.
-- **Chart 8 (Seasonal Consumption):** Grouped horizontal bar chart showing Min / Avg / Max consumption (kWh/100Km or L/100Km) per season, using all records.
-- **Chart 9 (Seasonal Efficiency):** Grouped horizontal bar chart showing Min / Avg / Max efficiency (Km/kWh or Km/L) per season, using all records.
-- **Chart 10 (Seasonal Cost per Km):** Grouped horizontal bar chart showing Min / Avg / Max €/Km per season, using all records.
+- **Chart 6 (Monthly Expenditure):** Horizontal bars, one per month-year combination, colored by the season of that month. Uses **all active vehicle records** regardless of the active filter.
+- **Chart 7 (Seasonal Price):** Grouped horizontal bar chart showing Min / Avg / Max unit prices per season.
+- **Chart 8 (Seasonal Consumption):** Grouped horizontal bar chart showing Min / Avg / Max consumption (kWh/100Km or L/100Km) per season.
+- **Chart 9 (Seasonal Efficiency):** Grouped horizontal bar chart showing Min / Avg / Max efficiency (Km/kWh or Km/L) per season.
+- **Chart 10 (Seasonal Cost per Km):** Grouped horizontal bar chart showing Min / Avg / Max €/Km per season.
 
 ### Doughnut Charts (Charts 11–12)
 
 - **Chart 11 (Season Spending):** Cutout doughnut (65% inner radius) showing the percentage of total expenditure per season. Tooltips show absolute € amounts and percentages.
-- **Chart 12 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month across all records. Colors use an HSL gradient from cool blue to warm blue.
+- **Chart 12 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month. Colors use an HSL gradient from cool blue to warm blue.
 
 All charts are properly destroyed (`chart.destroy()`) before being re-created to prevent memory leaks and canvas conflicts.
 
@@ -426,10 +544,13 @@ All charts are properly destroyed (`chart.destroy()`) before being re-created to
 | Interaction | Action |
 |---|---|
 | 👆 Tap record card | Open edit form |
-| 👆 Tap `+` FAB | Open add record form |
+| 👆 Tap `+` FAB | Open add record form (redirects to Vehicles tab if no vehicle active) |
 | 👆 Tap tab bar buttons | Switch active tab |
 | 👆 Tap header logo | Scroll active panel to top |
 | 👆 Tap modal backdrop | Close the modal |
+| 👆 Tap vehicle checkmark button | Set vehicle as active profile |
+| 👆 Tap vehicle pencil button | Open vehicle edit form |
+| 👆 Tap vehicle trash button | Trigger inline delete confirmation |
 | 👉 Swipe left (content area) | Navigate to the next tab |
 | 👈 Swipe right (content area) | Navigate to the previous tab |
 | 📳 Haptic feedback | Vibration on save (`50ms`) and delete (`50–30–50ms`) |
@@ -446,7 +567,8 @@ Tab switching uses smooth CSS transitions: the outgoing panel slides to the left
 - The toast container uses `aria-live="polite"` for screen reader announcements.
 - Season accordion headers use `aria-expanded` to communicate open/closed state.
 - Form inputs include explicit `<label>` associations and `aria-label` attributes.
-- Color is never the sole indicator of meaning (badges also differ in value context; seasons also have icon labels).
+- Vehicle action buttons (select, edit, delete) each carry descriptive `aria-label` and `title` attributes.
+- Color is never the sole indicator of meaning (badges also differ in value context; seasons also have icon labels; active vehicle is indicated by both border color and button state).
 
 ---
 

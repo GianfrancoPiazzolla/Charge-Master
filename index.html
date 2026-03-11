@@ -1364,7 +1364,7 @@ function renderRecordList() {
         <div class="stat-chip">♻️ <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
       </div>
       <div class="record-row-cost" style="margin-top:4px">
-        <div><span class="record-cost">💰 € ${r.totalCost.toFixed(2)}</span><span class="record-unit-price"> ( @ € ${r.unitPrice.toFixed(2)}/${unitLabel()} )</span></div>
+        <div><span class="record-cost">💸 € ${r.totalCost.toFixed(2)}</span><span class="record-unit-price"> ( @ € ${r.unitPrice.toFixed(2)}/${unitLabel()} )</span></div>
       </div>
       ${loc}
       <button class="menu-btn ripple-host" aria-label="Record options" onclick="toggleMenu(event,'${r.id}')">
@@ -1710,7 +1710,7 @@ function renderStatsContent() {
     ${statCard2('Total Distance', stats.totalDist.toFixed(1), ' Km', '🛣️')}
     ${statCard2(unitLabel()==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), unitLabel()==='kWh'?'🔋':'⛽')}
     ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💸')}
-    ${statCard2('Average Cost/Km', '€ '+stats.avgCpkm.toFixed(2), '/Km', '💰')}
+    ${statCard2('Average Cost', '€ '+stats.avgCpkm.toFixed(2), '/Km', '💰')}
     ${statCard2('Average Consumption', stats.avgConsumption.toFixed(2), ` ${unitLabel()}/100Km`, '📈')}
     ${statCard2('Efficiency', stats.avgKmPerUnit.toFixed(2), ` Km/${unitLabel()}`, '💹')}
   </div>`;

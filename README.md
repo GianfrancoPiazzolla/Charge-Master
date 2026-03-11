@@ -53,7 +53,7 @@
 - **✏️ Edit any vehicle** — tap the edit (pencil) icon on a vehicle card to update its name or switch its unit preference between kWh and Liters.
 - **✅ Select the active vehicle** — tap the checkmark button on any vehicle card to make it the active profile. The active vehicle card is highlighted with a blue border accent. All refueling records, statistics, and charts shown throughout the app are scoped to the active vehicle.
 - **🗑️ Delete a vehicle** — tap the trash icon on a vehicle card. An inline confirmation prompt appears, warning how many associated records will also be deleted. Deletion removes both the vehicle profile and all its linked records.
-- **📊 Record count badge** — each vehicle card displays the number of refueling/charging records associated with it (e.g. `🔋 kWh · 12 records`).
+- **📊 Record count badge** — each vehicle card displays the number of refueling/charging records associated with it (e.g. `🔋 BEV · 12 records`).
 - **📡 Empty state** — when no vehicles have been added yet, a full illustrated placeholder is shown with a "Add Vehicle" call-to-action button.
 - **🔔 Toast notifications** — every vehicle action (add, update, select, delete) fires a non-intrusive toast notification.
 

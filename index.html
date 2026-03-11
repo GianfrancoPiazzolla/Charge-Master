@@ -651,6 +651,50 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 .page-btn.active { background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); }
 .page-btn:hover:not(.active) { border-color: var(--border-active); color: var(--text-primary); }
 .page-info { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); }
+
+/* VEHICLE BADGE */
+.vehicle-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(6,182,212,0.15));
+  border: 1px solid rgba(59,130,246,0.35);
+  border-radius: 20px; padding: 5px 14px;
+  font-family: var(--font-display); font-size: var(--text-sm); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent-secondary);
+  margin-bottom: 12px;
+}
+.vehicle-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* VEHICLE LIST */
+.vehicle-card {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+  transition: border-color 200ms, box-shadow 200ms;
+  animation: cardIn 300ms cubic-bezier(0.4,0,0.2,1) both;
+}
+.vehicle-card:hover { border-color: var(--border-active); box-shadow: 0 4px 20px rgba(59,130,246,0.1); }
+.vehicle-card-icon {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  display: flex; align-items: center; justify-content: center;
+}
+.vehicle-card-icon svg { width: 22px; height: 22px; color: #fff; }
+.vehicle-card-info { flex: 1; min-width: 0; }
+.vehicle-card-name { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vehicle-card-unit { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+.vehicle-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.vehicle-action-btn {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-subtle);
+  background: var(--bg-tertiary); color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 150ms; appearance: none; -webkit-appearance: none;
+}
+.vehicle-action-btn:hover { border-color: var(--border-active); color: var(--text-primary); }
+.vehicle-action-btn.danger:hover { border-color: rgba(239,68,68,0.5); color: var(--danger); background: rgba(239,68,68,0.08); }
+.vehicle-action-btn.select-active { border-color: var(--accent-primary); color: var(--accent-primary); background: rgba(59,130,246,0.12); }
+.vehicle-action-btn.select-active:hover { background: rgba(59,130,246,0.2); }
+.vehicle-action-btn svg { width: 14px; height: 14px; }
 </style>
 </head>
 <body>
@@ -680,8 +724,14 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 
 <!-- MAIN CONTENT -->
 <main id="app-content">
+  <!-- TAB 0: VEHICLES -->
+  <div class="tab-panel active" id="panel-vehicles" role="tabpanel" aria-label="Vehicles">
+    <div id="vehicles-list"></div>
+  </div>
+
   <!-- TAB 1: REFUELING -->
-  <div class="tab-panel active" id="panel-refueling" role="tabpanel" aria-label="Refueling">
+  <div class="tab-panel" id="panel-refueling" role="tabpanel" aria-label="Refueling">
+    <div id="vehicle-ribbon-wrap"></div>
     <div id="summary-ribbon-wrap"></div>
     <div id="records-list"></div>
     <div id="pagination-wrap"></div>
@@ -701,8 +751,20 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 
 <!-- BOTTOM TAB BAR -->
 <nav id="tab-bar" role="tablist">
-  <button class="tab-btn active ripple-host" id="tab-refueling" role="tab" aria-selected="true" aria-controls="panel-refueling" onclick="switchTab('refueling')" aria-label="Refueling tab">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v11"/><path d="M4 20h10"/><path d="M16 9h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M9 6V3"/><path d="M7 3h4"/><line x1="8" y1="12" x2="11" y2="9"/><line x1="11" y1="12" x2="8" y2="15"/></svg>
+  <button class="tab-btn active ripple-host" id="tab-vehicles" role="tab" aria-selected="true" aria-controls="panel-vehicles" onclick="switchTab('vehicles')" aria-label="Vehicles tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15.5H1.5a.5.5 0 0 1-.5-.5v-1.2c0-.9.6-1.8 1.5-2l1.2-.3 2.8-3.8C7.1 7 8.2 6.5 9.4 6.5h5.2c1.2 0 2.3.5 2.9 1.2l2.8 3.8 1.2.3c.9.2 1.5 1.1 1.5 2V15a.5.5 0 0 1-.5.5H22"/><path d="M8.5 6.6 6.5 9.5h11l-2-2.9"/><path d="M12 6.5v3"/><circle cx="6.5" cy="16" r="2"/><circle cx="17.5" cy="16" r="2"/><path d="M8.5 16h7"/><path d="M4.5 13.5h15"/></svg>
+    <span>Vehicles</span>
+  </button>
+  <button class="tab-btn ripple-host" id="tab-refueling" role="tab" aria-selected="false" aria-controls="panel-refueling" onclick="switchTab('refueling')" aria-label="Refueling tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="8" width="9" height="5" rx="1.2"/>
+      <path d="M11 10.5h4.5a1 1 0 0 1 1 1v1.5"/>
+      <path d="M16.5 13 Q17.5 13 17.5 14.2 L17.5 15.5"/>
+      <rect x="16.5" y="15.5" width="2" height="1.2" rx="0.5"/>
+      <path d="M4 13 L3.5 19 Q3.5 20 4.5 20 L7 20 Q8 20 8 19 L7.5 13"/>
+      <path d="M18.5 9 Q21 9 21 11.5 Q21 14 19 14.5" stroke-width="1.4"/>
+      <path d="M13 2.5 L10.5 7 L13 7 L10 11.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
     <span>Refueling</span>
   </button>
   <button class="tab-btn ripple-host" id="tab-statistics" role="tab" aria-selected="false" aria-controls="panel-statistics" onclick="switchTab('statistics')" aria-label="Statistics tab">
@@ -798,13 +860,6 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
     <div class="modal-handle"></div>
     <div class="modal-title">⚙ Settings</div>
     <div class="settings-section">
-      <div class="settings-section-title">Preferred Unit</div>
-      <div class="unit-pills">
-        <button class="unit-pill ripple-host" id="pill-kwh" onclick="setUnit('kWh')" aria-label="Use kWh unit">🔋 kWh</button>
-        <button class="unit-pill ripple-host" id="pill-l" onclick="setUnit('L')" aria-label="Use Liters unit">⛽ Liters</button>
-      </div>
-    </div>
-    <div class="settings-section">
       <div class="settings-section-title">Display Mode</div>
       <div class="toggle-wrap">
         <span class="toggle-label" id="theme-label">🌙 Dark Mode</span>
@@ -851,6 +906,33 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
   </div>
 </div>
 
+<!-- MODAL: VEHICLE FORM -->
+<div class="modal-overlay" id="modal-vehicle-form" role="dialog" aria-modal="true" aria-label="Vehicle form">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="vehicle-form-title">Add Vehicle</div>
+    <input type="hidden" id="vfield-id">
+    <div class="form-group">
+      <label class="form-label" for="vfield-name">Name</label>
+      <input type="text" class="form-input" id="vfield-name" maxlength="60" placeholder="" aria-label="Vehicle name">
+      <div class="form-error">Name is required</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Preferred Unit</label>
+      <div class="unit-pills">
+        <button type="button" class="unit-pill ripple-host" id="vpill-kwh" onclick="setVehicleUnit('kWh')" aria-label="Use kWh unit">🔋 kWh</button>
+        <button type="button" class="unit-pill ripple-host" id="vpill-l" onclick="setVehicleUnit('L')" aria-label="Use Liters unit">⛽ Liters</button>
+      </div>
+    </div>
+    <div id="vehicle-delete-confirm-wrap"></div>
+    <button type="button" class="btn btn-primary ripple-host" onclick="saveVehicle()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save Vehicle
+    </button>
+    <button type="button" class="btn btn-secondary ripple-host" onclick="closeModal('modal-vehicle-form')">Cancel</button>
+  </div>
+</div>
+
 <!-- MODAL: ABOUT -->
 <div class="modal-overlay" id="modal-about" role="dialog" aria-modal="true" aria-label="About Charge Master">
   <div class="modal-dialog">
@@ -885,8 +967,11 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 // --- STATE ---
 const AppState = {
   records: [],
-  settings: { unit: 'kWh', theme: 'dark', schemaVersion: 1 },
-  activeTab: 'refueling',
+  vehicles: [],
+  activeVehicleId: null,
+  pendingVehicleUnit: 'kWh',
+  settings: { theme: 'dark', schemaVersion: 1 },
+  activeTab: 'vehicles',
   filter: { mode: 'month', month: new Date().getMonth(), year: new Date().getFullYear(), from: '', to: '' },
   currentPage: 1,
   pageSize: 20,
@@ -896,12 +981,14 @@ const AppState = {
 
 const STORAGE_RECORDS = 'chargemaster_v1_records';
 const STORAGE_SETTINGS = 'chargemaster_v1_settings';
-const APP_VERSION = '1.0.0';
+const STORAGE_VEHICLES = 'chargemaster_v1_vehicles';
+const APP_VERSION = '1.1.0';
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 // --- PERSIST ---
 function saveRecords() { localStorage.setItem(STORAGE_RECORDS, JSON.stringify(AppState.records)); }
 function saveSettings() { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(AppState.settings)); }
+function saveVehicles() { localStorage.setItem(STORAGE_VEHICLES, JSON.stringify(AppState.vehicles)); }
 
 function loadData() {
   try {
@@ -912,6 +999,34 @@ function loadData() {
     const r = localStorage.getItem(STORAGE_RECORDS);
     if (r) AppState.records = JSON.parse(r);
   } catch(e) {}
+  try {
+    const v = localStorage.getItem(STORAGE_VEHICLES);
+    if (v) AppState.vehicles = JSON.parse(v);
+  } catch(e) {}
+
+  // Migration: records without a valid vehicleId → assign to first vehicle or create "Default"
+  const validVehicleIds = new Set(AppState.vehicles.map(function(v) { return v.id; }));
+  const orphanedRecords = AppState.records.filter(function(r) { return !r.vehicleId || !validVehicleIds.has(r.vehicleId); });
+  if (orphanedRecords.length > 0) {
+    var targetId;
+    if (AppState.vehicles.length === 0) {
+      targetId = uuid();
+      AppState.vehicles.push({ id: targetId, name: 'Default', unit: 'kWh' });
+      saveVehicles();
+    } else {
+      targetId = AppState.vehicles[0].id;
+    }
+    AppState.records = AppState.records.map(function(r) {
+      return (r.vehicleId && validVehicleIds.has(r.vehicleId)) ? r : Object.assign({}, r, { vehicleId: targetId });
+    });
+    saveRecords();
+  }
+
+  // Set active vehicle to first in list
+  if (AppState.vehicles.length > 0) {
+    AppState.activeVehicleId = AppState.vehicles[0].id;
+  }
+
   applyTheme(AppState.settings.theme);
 }
 
@@ -954,7 +1069,10 @@ const SEASON_ICONS = { winter:'❄️', spring:'🌱', summer:'☀️', autumn:'
 // --- FILTER ---
 function getFilteredRecords() {
   const { mode, month, year, from, to } = AppState.filter;
-  return AppState.records.filter(r => {
+  const vehicleRecs = AppState.activeVehicleId
+    ? AppState.records.filter(r => r.vehicleId === AppState.activeVehicleId)
+    : AppState.records;
+  return vehicleRecs.filter(r => {
     const d = new Date(r.date);
     if (mode === 'month') return d.getFullYear() === year && d.getMonth() === month;
     if (mode === 'year') return d.getFullYear() === year;
@@ -990,48 +1108,230 @@ function computeStats(recs) {
 }
 
 // --- UNIT LABELS ---
-function unitLabel() { return AppState.settings.unit === 'kWh' ? 'kWh' : 'L'; }
-function priceLabel() { return `Price per ${unitLabel()} (€)`; }
-function quantityLabel() { return `Quantity (${unitLabel()})`; }
+function getActiveVehicle() { return AppState.vehicles.find(function(v) { return v.id === AppState.activeVehicleId; }) || null; }
+function unitLabel() { var v = getActiveVehicle(); return (v ? v.unit : 'kWh') === 'kWh' ? 'kWh' : 'L'; }
+function priceLabel() { return 'Price per ' + unitLabel() + ' (€)'; }
+function quantityLabel() { return 'Quantity (' + unitLabel() + ')'; }
+
+// ==============================
+// RENDER: VEHICLES TAB
+// ==============================
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderVehicles() {
+  var wrap = document.getElementById('vehicles-list');
+  if (!wrap) return;
+  if (!AppState.vehicles.length) {
+    wrap.innerHTML = '<div class="empty-state">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:80px;height:80px;opacity:0.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15.5H1.5a.5.5 0 0 1-.5-.5v-1.2c0-.9.6-1.8 1.5-2l1.2-.3 2.8-3.8C7.1 7 8.2 6.5 9.4 6.5h5.2c1.2 0 2.3.5 2.9 1.2l2.8 3.8 1.2.3c.9.2 1.5 1.1 1.5 2V15a.5.5 0 0 1-.5.5H22"/><path d="M8.5 6.6 6.5 9.5h11l-2-2.9"/><path d="M12 6.5v3"/><circle cx="6.5" cy="16" r="2"/><circle cx="17.5" cy="16" r="2"/><path d="M8.5 16h7"/><path d="M4.5 13.5h15"/></svg>' +
+      '<div class="empty-title">No Vehicles Yet</div>' +
+      '<div class="empty-sub">Add your first vehicle to start tracking refueling records.</div>' +
+      '<button class="empty-cta ripple-host" onclick="openVehicleForm()" aria-label="Add first vehicle">+ Add Vehicle</button>' +
+      '</div>';
+    return;
+  }
+  var cards = '';
+  for (var i = 0; i < AppState.vehicles.length; i++) {
+    var v = AppState.vehicles[i];
+    var isActive = v.id === AppState.activeVehicleId;
+    var recCount = AppState.records.filter(function(r) { return r.vehicleId === v.id; }).length;
+    cards += '<div class="vehicle-card" style="animation-delay:' + (i*50) + 'ms' + (isActive ? ';border-color:var(--border-active)' : '') + '">' +
+      '<div class="vehicle-card-icon">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15.5H1.5a.5.5 0 0 1-.5-.5v-1.2c0-.9.6-1.8 1.5-2l1.2-.3 2.8-3.8C7.1 7 8.2 6.5 9.4 6.5h5.2c1.2 0 2.3.5 2.9 1.2l2.8 3.8 1.2.3c.9.2 1.5 1.1 1.5 2V15a.5.5 0 0 1-.5.5H22"/><path d="M8.5 6.6 6.5 9.5h11l-2-2.9"/><path d="M12 6.5v3"/><circle cx="6.5" cy="16" r="2"/><circle cx="17.5" cy="16" r="2"/><path d="M8.5 16h7"/><path d="M4.5 13.5h15"/></svg>' +
+      '</div>' +
+      '<div class="vehicle-card-info">' +
+        '<div class="vehicle-card-name">' + escapeHtml(v.name) + '</div>' +
+        '<div class="vehicle-card-unit">' + (v.unit === 'kWh' ? '🔋 kWh' : '⛽ Liters') + ' · ' + recCount + ' record' + (recCount !== 1 ? 's' : '') + '</div>' +
+      '</div>' +
+      '<div class="vehicle-card-actions">' +
+        '<button class="vehicle-action-btn' + (isActive ? ' select-active' : '') + ' ripple-host" onclick="selectVehicle(\'' + v.id + '\')" aria-label="Select vehicle" title="' + (isActive ? 'Active profile' : 'Select profile') + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '</button>' +
+        '<button class="vehicle-action-btn ripple-host" onclick="openVehicleForm(\'' + v.id + '\')" aria-label="Edit vehicle" title="Edit">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+        '</button>' +
+        '<button class="vehicle-action-btn danger ripple-host" onclick="confirmDeleteVehicle(\'' + v.id + '\')" aria-label="Delete vehicle" title="Delete">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+  wrap.innerHTML =
+    '<div class="section-hdr" style="margin-top:4px">' +
+      '<span class="section-title">🚗 My Vehicles</span>' +
+      '<button class="icon-btn ripple-host" onclick="openVehicleForm()" aria-label="Add vehicle" title="Add Vehicle" style="width:36px;height:36px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+      '</button>' +
+    '</div>' +
+    cards +
+    '<div id="vehicle-delete-inline-wrap"></div>';
+}
+
+function selectVehicle(id) {
+  if (AppState.activeVehicleId === id) return;
+  AppState.activeVehicleId = id;
+  AppState.currentPage = 1;
+  renderVehicles();
+  renderRefueling();
+  if (AppState.activeTab === 'statistics') renderStatistics();
+  if (AppState.activeTab === 'charts') renderCharts();
+  var v = AppState.vehicles.find(function(x) { return x.id === id; });
+  showToast((v ? escapeHtml(v.name) : 'Vehicle') + ' selected', 'success');
+}
+
+function openVehicleForm(id) {
+  document.getElementById('vehicle-form-title').textContent = id ? 'Edit Vehicle' : 'Add Vehicle';
+  document.getElementById('vfield-id').value = id || '';
+  document.getElementById('vehicle-delete-confirm-wrap').innerHTML = '';
+  document.getElementById('vfield-name').classList.remove('error', 'valid');
+  if (id) {
+    var v = AppState.vehicles.find(function(x) { return x.id === id; });
+    if (v) {
+      document.getElementById('vfield-name').value = v.name;
+      AppState.pendingVehicleUnit = v.unit || 'kWh';
+    }
+  } else {
+    document.getElementById('vfield-name').value = '';
+    AppState.pendingVehicleUnit = 'kWh';
+  }
+  document.getElementById('vpill-kwh').classList.toggle('active', AppState.pendingVehicleUnit === 'kWh');
+  document.getElementById('vpill-l').classList.toggle('active', AppState.pendingVehicleUnit === 'L');
+  openModal('modal-vehicle-form');
+}
+
+function setVehicleUnit(u) {
+  AppState.pendingVehicleUnit = u;
+  document.getElementById('vpill-kwh').classList.toggle('active', u === 'kWh');
+  document.getElementById('vpill-l').classList.toggle('active', u === 'L');
+}
+
+function saveVehicle() {
+  var nameEl = document.getElementById('vfield-name');
+  var name = nameEl.value.trim();
+  if (!name) {
+    nameEl.classList.add('error', 'shake');
+    nameEl.addEventListener('animationend', function() { nameEl.classList.remove('shake'); }, {once: true});
+    return;
+  }
+  nameEl.classList.remove('error');
+  var id = document.getElementById('vfield-id').value;
+  if (id) {
+    var idx = AppState.vehicles.findIndex(function(v) { return v.id === id; });
+    if (idx !== -1) {
+      AppState.vehicles[idx] = { id: AppState.vehicles[idx].id, name: name, unit: AppState.pendingVehicleUnit };
+      showToast('Vehicle updated', 'success');
+    }
+  } else {
+    var newId = uuid();
+    AppState.vehicles.push({ id: newId, name: name, unit: AppState.pendingVehicleUnit });
+    if (!AppState.activeVehicleId) { AppState.activeVehicleId = newId; }
+    showToast('Vehicle added', 'success');
+  }
+  saveVehicles();
+  closeModal('modal-vehicle-form');
+  renderVehicles();
+  renderRefueling();
+}
+
+function confirmDeleteVehicle(id) {
+  // Re-render vehicles first to ensure fresh DOM, then show confirm in inline wrap
+  renderVehicles();
+  var wrap = document.getElementById('vehicle-delete-inline-wrap');
+  if (!wrap) return;
+  var v = AppState.vehicles.find(function(x) { return x.id === id; });
+  var recCount = AppState.records.filter(function(r) { return r.vehicleId === id; }).length;
+  var msg = recCount > 0
+    ? 'Delete &quot;' + escapeHtml(v ? v.name : '') + '&quot;? This will also delete ' + recCount + ' associated record(s).'
+    : 'Delete &quot;' + escapeHtml(v ? v.name : '') + '&quot;? This cannot be undone.';
+  wrap.innerHTML = '<div class="confirm-inline">' +
+    '<span>⚠ ' + msg + '</span>' +
+    '<div class="cta-btns">' +
+      '<button class="confirm-yes" onclick="deleteVehicle(\'' + id + '\')">Delete</button>' +
+      '<button class="confirm-no" onclick="renderVehicles()">Cancel</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function deleteVehicle(id) {
+  AppState.vehicles = AppState.vehicles.filter(function(v) { return v.id !== id; });
+  AppState.records = AppState.records.filter(function(r) { return r.vehicleId !== id; });
+  if (AppState.activeVehicleId === id) {
+    AppState.activeVehicleId = AppState.vehicles.length > 0 ? AppState.vehicles[0].id : null;
+  }
+  saveVehicles();
+  saveRecords();
+  renderVehicles();
+  renderRefueling();
+  if (AppState.activeTab === 'statistics') renderStatistics();
+  if (AppState.activeTab === 'charts') renderCharts();
+  showToast('Vehicle deleted', 'warning');
+}
 
 // ==============================
 // RENDER: REFUELING TAB
 // ==============================
 function renderRefueling() {
+  renderVehicleBadge();
   renderSummary();
   renderRecordList();
 }
 
+function renderVehicleBadge() {
+  var wrap = document.getElementById('vehicle-ribbon-wrap');
+  if (wrap) wrap.innerHTML = '';
+}
+
 function renderSummary() {
   const wrap = document.getElementById('summary-ribbon-wrap');
-  const total = AppState.records.length;
-  const spent = AppState.records.reduce((a,r) => a + r.totalCost, 0);
-  const dist = AppState.records.reduce((a,r) => a + r.distanceKm, 0);
-  wrap.innerHTML = `<div class="summary-ribbon">
-    <div class="ribbon-item"><div class="ribbon-label">Records</div><div class="ribbon-value">${total}</div></div>
-    <div class="ribbon-item"><div class="ribbon-label">Total Expense</div><div class="ribbon-value">€ ${spent.toFixed(2)}</div></div>
-    <div class="ribbon-item"><div class="ribbon-label">Total Km</div><div class="ribbon-value">${dist.toFixed(0)}</div></div>
+  const v = getActiveVehicle();
+  const vehicleRecs = AppState.activeVehicleId
+    ? AppState.records.filter(r => r.vehicleId === AppState.activeVehicleId)
+    : AppState.records;
+  const total = vehicleRecs.length;
+  const spent = vehicleRecs.reduce((a,r) => a + r.totalCost, 0);
+  const dist = vehicleRecs.reduce((a,r) => a + r.distanceKm, 0);
+  const vehicleHeader = v ? `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border-subtle)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-secondary);flex-shrink:0"><path d="M2 15.5H1.5a.5.5 0 0 1-.5-.5v-1.2c0-.9.6-1.8 1.5-2l1.2-.3 2.8-3.8C7.1 7 8.2 6.5 9.4 6.5h5.2c1.2 0 2.3.5 2.9 1.2l2.8 3.8 1.2.3c.9.2 1.5 1.1 1.5 2V15a.5.5 0 0 1-.5.5H22"/><path d="M8.5 6.6 6.5 9.5h11l-2-2.9"/><path d="M12 6.5v3"/><circle cx="6.5" cy="16" r="2"/><circle cx="17.5" cy="16" r="2"/><path d="M8.5 16h7"/><path d="M4.5 13.5h15"/></svg>
+      <span style="font-family:var(--font-display);font-size:var(--text-sm);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-secondary)">${escapeHtml(v.name)}</span>
+      <span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:2px">${v.unit === 'kWh' ? '(BEV)' : '(ICE)'}</span>
+    </div>` : '';
+  wrap.innerHTML = `<div class="summary-ribbon" style="flex-direction:column">
+    ${vehicleHeader}
+    <div style="display:flex;gap:12px">
+      <div class="ribbon-item"><div class="ribbon-label">Records</div><div class="ribbon-value">${total}</div></div>
+      <div class="ribbon-item"><div class="ribbon-label">Total Expense</div><div class="ribbon-value">€ ${spent.toFixed(2)}</div></div>
+      <div class="ribbon-item"><div class="ribbon-label">Total Km</div><div class="ribbon-value">${dist.toFixed(0)}</div></div>
+    </div>
   </div>`;
 }
 
 function renderRecordList() {
   const list = document.getElementById('records-list');
   const pagWrap = document.getElementById('pagination-wrap');
-  const sorted = [...AppState.records].sort((a,b) => { const d = b.date.localeCompare(a.date); return d !== 0 ? d : (b.createdAt || '').localeCompare(a.createdAt || ''); });
+  const vehicleRecs = AppState.activeVehicleId
+    ? AppState.records.filter(r => r.vehicleId === AppState.activeVehicleId)
+    : AppState.records;
+  const sorted = [...vehicleRecs].sort((a,b) => { const d = b.date.localeCompare(a.date); return d !== 0 ? d : (b.createdAt || '').localeCompare(a.createdAt || ''); });
 
   if (!sorted.length) {
+    const noVehicle = !AppState.activeVehicleId;
     list.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="10" y="20" width="60" height="45" rx="6" stroke="currentColor" stroke-width="2"/>
         <path d="M25 35h30M25 45h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M48 12L36 28h10l-4 18L58 22H48L48 12z" fill="currentColor" opacity=".4"/>
       </svg>
-      <div class="empty-title">No Refueling Records Yet</div>
-      <div class="empty-sub">Tap the + button to add your first record and start tracking.</div>
-      <button class="empty-cta ripple-host" onclick="openForm()" aria-label="Add first record">+ Add First Record</button>
+      <div class="empty-title">${noVehicle ? 'No Vehicle Selected' : 'No Refueling Records Yet'}</div>
+      <div class="empty-sub">${noVehicle ? 'Add a vehicle in the Vehicles tab to start tracking.' : 'Tap the + button to add your first record and start tracking.'}</div>
+      ${noVehicle
+        ? `<button class="empty-cta ripple-host" onclick="switchTab('vehicles')">Add a Vehicle</button>`
+        : `<button class="empty-cta ripple-host" onclick="openForm()" aria-label="Add first record">+ Add First Record</button>`}
     </div>`;
     pagWrap.innerHTML = '';
-    document.getElementById('fab').classList.add('pulse');
+    if (!noVehicle) document.getElementById('fab').classList.add('pulse');
     return;
   }
   document.getElementById('fab').classList.remove('pulse');
@@ -1060,7 +1360,7 @@ function renderRecordList() {
       </div>
       <div class="stat-chips">
         <div class="stat-chip">🚩 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
-        <div class="stat-chip">${AppState.settings.unit === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
+        <div class="stat-chip">${unitLabel() === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
         <div class="stat-chip">♻️ <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
       </div>
       <div class="record-row" style="margin-top:4px">
@@ -1114,6 +1414,11 @@ function toggleMenu(e, id) {
 // FORM
 // ==============================
 function openForm(id) {
+  if (!AppState.activeVehicleId && !id) {
+    showToast('Please add a vehicle first', 'warning');
+    switchTab('vehicles');
+    return;
+  }
   closeOpenDropdowns();
   const form = document.getElementById('refuel-form');
   form.reset();
@@ -1217,8 +1522,10 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
     showToast('Record updated', 'success');
   } else {
     const createdAt = document.getElementById('field-created-at').value || now;
+    const resolvedVehicleId = AppState.activeVehicleId || (AppState.vehicles.length > 0 ? AppState.vehicles[0].id : null);
     AppState.records.push({
       id: uuid(),
+      vehicleId: resolvedVehicleId,
       date: document.getElementById('field-date').value,
       distanceKm: dist, quantity: qty, unitPrice: price,
       totalCost: total, costPerKm: cpkm,
@@ -1401,7 +1708,7 @@ function renderStatsContent() {
   // EXTRA CARDS
   const extraCards = `<div class="stats-grid-2">
     ${statCard2('Total Distance', stats.totalDist.toFixed(1), ' Km', '🛣️')}
-    ${statCard2(AppState.settings.unit==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), AppState.settings.unit==='kWh'?'🔋':'⛽')}
+    ${statCard2(unitLabel()==='kWh'?'Total Energy':'Total Fuel', stats.totalQty.toFixed(2), ' '+unitLabel(), unitLabel()==='kWh'?'🔋':'⛽')}
     ${statCard2('Total Expense', '€ '+stats.totalCost.toFixed(2), '', '💸')}
     ${statCard2('Average Cost/Km', '€ '+stats.avgCpkm.toFixed(2), '/Km', '💰')}
     ${statCard2('Average Consumption', stats.avgConsumption.toFixed(2), ` ${unitLabel()}/100Km`, '📈')}
@@ -1597,7 +1904,8 @@ function renderCharts() {
   // CHART: Monthly Expenditure (horizontal bar)
   destroyChart('chart-monthly');
   const monthly = {};
-  AppState.records.forEach(r => {
+  const allVehicleRecs = AppState.activeVehicleId ? AppState.records.filter(r => r.vehicleId === AppState.activeVehicleId) : AppState.records;
+  allVehicleRecs.forEach(r => {
     const d = new Date(r.date+'T00:00:00');
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     monthly[key] = (monthly[key]||0) + r.totalCost;
@@ -1614,7 +1922,7 @@ function renderCharts() {
   // CHART: Season grouped bar
   destroyChart('chart-season');
   const seasons = ['winter','spring','summer','autumn'];
-  const seaStats = seasons.map(s => computeStats(AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s)));
+  const seaStats = seasons.map(s => computeStats(allVehicleRecs.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s)));
   AppState.charts['chart-season'] = new Chart(document.getElementById('chart-season'), { type:'bar', data: {
     labels: seasons.map(s => s.charAt(0).toUpperCase()+s.slice(1)),
     datasets: [
@@ -1628,7 +1936,7 @@ function renderCharts() {
   // CHART: Average Consumption by Season (kWh/100Km or L/100Km)
   destroyChart('chart-season-cons');
   const seaStatsCons = seasons.map(s => {
-    const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
+    const sRecs = allVehicleRecs.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
     if (!sRecs.length) return null;
     const cons = sRecs.map(r => (r.quantity / r.distanceKm) * 100);
     return { min: Math.min(...cons), avg: cons.reduce((a,b)=>a+b,0)/cons.length, max: Math.max(...cons) };
@@ -1647,7 +1955,7 @@ function renderCharts() {
   // CHART: Average Efficiency by Season (Km/kWh or Km/L)
   destroyChart('chart-season-eff');
   const seaStatsEff = seasons.map(s => {
-    const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
+    const sRecs = allVehicleRecs.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
     if (!sRecs.length) return null;
     const effs = sRecs.map(r => r.distanceKm / r.quantity);
     return { min: Math.min(...effs), avg: effs.reduce((a,b)=>a+b,0)/effs.length, max: Math.max(...effs) };
@@ -1666,7 +1974,7 @@ function renderCharts() {
   // CHART: Average Cost per Km by Season (€/Km)
   destroyChart('chart-season-cpkm');
   const seaStatsCpkm = seasons.map(s => {
-    const sRecs = AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
+    const sRecs = allVehicleRecs.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s);
     if (!sRecs.length) return null;
     const cpkms2 = sRecs.map(r => r.costPerKm);
     return { min: Math.min(...cpkms2), avg: cpkms2.reduce((a,b)=>a+b,0)/cpkms2.length, max: Math.max(...cpkms2) };
@@ -1683,7 +1991,7 @@ function renderCharts() {
 
   // CHART: Donut season spending
   destroyChart('chart-donut-season');
-  const seaCosts = seasons.map(s => AppState.records.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s).reduce((a,r)=>a+r.totalCost,0));
+  const seaCosts = seasons.map(s => allVehicleRecs.filter(r => getSeason(new Date(r.date+'T00:00:00').getMonth())===s).reduce((a,r)=>a+r.totalCost,0));
   const totalSpent = seaCosts.reduce((a,b)=>a+b,0);
   AppState.charts['chart-donut-season'] = new Chart(document.getElementById('chart-donut-season'), { type:'doughnut', data: {
     labels: seasons.map(s=>s.charAt(0).toUpperCase()+s.slice(1)),
@@ -1698,7 +2006,7 @@ function renderCharts() {
 
   // CHART: Donut monthly frequency
   destroyChart('chart-donut-month');
-  const mCounts = Array.from({length:12},(_,m) => AppState.records.filter(r=>new Date(r.date+'T00:00:00').getMonth()===m).length);
+  const mCounts = Array.from({length:12},(_,m) => allVehicleRecs.filter(r=>new Date(r.date+'T00:00:00').getMonth()===m).length);
   const mGrad = Array.from({length:12},(_,i) => `hsl(${200+i*12},70%,${50-i*2}%)`);
   AppState.charts['chart-donut-month'] = new Chart(document.getElementById('chart-donut-month'), { type:'doughnut', data: {
     labels: MONTHS.map(m=>m.slice(0,3)),
@@ -1734,8 +2042,6 @@ function closeModal(id) {
 
 function openSettings() {
   const s = AppState.settings;
-  document.getElementById('pill-kwh').classList.toggle('active', s.unit==='kWh');
-  document.getElementById('pill-l').classList.toggle('active', s.unit==='L');
   const toggle = document.getElementById('theme-toggle');
   toggle.classList.toggle('on', s.theme==='light');
   document.getElementById('theme-label').textContent = s.theme==='dark' ? '🌙 Dark Mode' : '☀ Light Mode';
@@ -1746,18 +2052,13 @@ function openAbout() { openModal('modal-about'); }
 // ==============================
 // SETTINGS ACTIONS
 // ==============================
-function setUnit(u) {
-  AppState.settings.unit = u;
-  saveSettings();
-  document.getElementById('pill-kwh').classList.toggle('active', u==='kWh');
-  document.getElementById('pill-l').classList.toggle('active', u==='L');
-  showToast(`Unit set to ${u}`, 'success');
-  renderAll();
-}
-
 function exportRecords() {
   const date = new Date().toISOString().split('T')[0];
-  const data = { exportedAt: new Date().toISOString(), appVersion: APP_VERSION, recordCount: AppState.records.length, unit: AppState.settings.unit, records: AppState.records };
+  const vehicles = AppState.vehicles.map(function(v) {
+    const vRecords = AppState.records.filter(function(r) { return r.vehicleId === v.id; });
+    return { vehicleId: v.id, vehicleName: v.name, unit: v.unit, recordCount: vRecords.length };
+  });
+  const data = { exportedAt: new Date().toISOString(), appVersion: APP_VERSION, vehicles: vehicles, records: AppState.records };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1780,8 +2081,15 @@ function handleImportFile(e) {
       if (!Array.isArray(recs)) throw new Error('Invalid format');
       const valid = recs.filter(r => r.id && r.date && r.distanceKm !== undefined && r.quantity !== undefined && r.unitPrice !== undefined);
       if (!valid.length) throw new Error('No valid records found');
-      AppState.pendingImport = valid;
-      document.getElementById('import-count-label').textContent = valid.length;
+      let importedVehicles = Array.isArray(data.vehicles) ? data.vehicles : [];
+      let importedRecords = valid;
+      if (!importedVehicles.length) {
+        const defaultId = uuid();
+        importedVehicles = [{ vehicleId: defaultId, vehicleName: 'Default', unit: 'kWh' }];
+        importedRecords = valid.map(r => ({ ...r, vehicleId: defaultId }));
+      }
+      AppState.pendingImport = { records: importedRecords, vehicles: importedVehicles };
+      document.getElementById('import-count-label').textContent = importedRecords.length;
       closeModal('modal-settings');
       setTimeout(() => openModal('modal-import-choice'), 250);
     } catch(err) {
@@ -1791,7 +2099,6 @@ function handleImportFile(e) {
   };
   reader.readAsText(file);
 }
-
 function showDeleteAllConfirm() {
   const wrap = document.getElementById('delete-all-confirm-wrap');
   if (wrap.innerHTML) { wrap.innerHTML = ''; return; }
@@ -1817,16 +2124,36 @@ function deleteAllRecords() {
 function doImport(mode) {
   const imp = AppState.pendingImport;
   if (!imp) return;
+  const impRecords = imp.records;
+  const impVehicles = imp.vehicles || [];
+
+  // Create any vehicle profiles from the import file that don't already exist
+  const existingVehicleIds = new Set(AppState.vehicles.map(v => v.id));
+  impVehicles.forEach(function(iv) {
+    if (iv.vehicleId && !existingVehicleIds.has(iv.vehicleId)) {
+      AppState.vehicles.push({ id: iv.vehicleId, name: iv.vehicleName || 'Imported Vehicle', unit: iv.unit || 'kWh' });
+      existingVehicleIds.add(iv.vehicleId);
+    }
+  });
+
+  // For any record whose vehicleId is still not resolvable, fall back to first available vehicle
+  const fallbackVehicleId = AppState.activeVehicleId || (AppState.vehicles.length > 0 ? AppState.vehicles[0].id : null);
+  const sanitized = impRecords.map(r => (r.vehicleId && existingVehicleIds.has(r.vehicleId)) ? r : { ...r, vehicleId: fallbackVehicleId });
+
   if (mode === 'overwrite') {
-    AppState.records = imp;
-    showToast(`Imported ${imp.length} records (overwrite)`, 'success');
+    AppState.records = sanitized;
+    showToast(`Imported ${sanitized.length} records (overwrite)`, 'success');
   } else {
     const existing = new Set(AppState.records.map(r=>r.id));
-    const newRecs = imp.filter(r=>!existing.has(r.id));
+    const newRecs = sanitized.filter(r=>!existing.has(r.id));
     AppState.records = [...AppState.records, ...newRecs];
     showToast(`Merged ${newRecs.length} new records`, 'success');
   }
   AppState.pendingImport = null;
+  if (!AppState.activeVehicleId && AppState.vehicles.length > 0) {
+    AppState.activeVehicleId = AppState.vehicles[0].id;
+  }
+  saveVehicles();
   saveRecords();
   closeModal('modal-import-choice');
   renderAll();
@@ -1868,8 +2195,15 @@ function switchTab(name) {
   const panel = document.getElementById(`panel-${name}`);
   panel.classList.add('active');
 
-  if (name === 'statistics') renderStatistics();
-  else if (name === 'charts') renderCharts();
+  const fab = document.getElementById('fab');
+  if (name === 'vehicles') {
+    fab.style.display = 'none';
+    renderVehicles();
+  } else {
+    fab.style.display = '';
+    if (name === 'statistics') renderStatistics();
+    else if (name === 'charts') renderCharts();
+  }
 }
 
 function scrollToTop() {
@@ -1888,7 +2222,7 @@ document.getElementById('app-content').addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
   if (Math.abs(dx) > 50 && dy < 60) {
-    const tabs = ['refueling','statistics','charts'];
+    const tabs = ['vehicles','refueling','statistics','charts'];
     const idx = tabs.indexOf(AppState.activeTab);
     if (dx < 0 && idx < tabs.length-1) switchTab(tabs[idx+1]);
     if (dx > 0 && idx > 0) switchTab(tabs[idx-1]);
@@ -1904,6 +2238,7 @@ function closeOpenDropdowns() { document.querySelectorAll('.dropdown').forEach(d
 // RENDER ALL
 // ==============================
 function renderAll() {
+  renderVehicles();
   renderRefueling();
   if (AppState.activeTab === 'statistics') renderStatistics();
   if (AppState.activeTab === 'charts') renderCharts();
@@ -1951,7 +2286,9 @@ function addThemeMeta() {
   addThemeMeta();
   loadData();
   applyTheme(AppState.settings.theme);
-  renderAll();
+  document.getElementById('fab').style.display = 'none';
+  renderVehicles();
+  renderRefueling();
 })();
 </script>
 

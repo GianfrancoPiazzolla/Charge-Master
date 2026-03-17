@@ -28,6 +28,7 @@
 - [PWA & Offline Support](#-pwa--offline-support)
 - [Settings & Customization](#-settings--customization)
 - [Data Management](#-data-management)
+- [Efficiency Progress Bar](#-efficiency-progress-bar)
 - [Charts & Visualizations](#-charts--visualizations)
 - [Statistics & Analytics](#-statistics--analytics)
 - [Keyboard & Gesture Navigation](#-keyboard--gesture-navigation)
@@ -125,6 +126,7 @@ The same migration logic applies when importing a legacy JSON export file.
   - 🟢 Green (`badge-good`) — cost/Km is below or equal to average
   - 🟡 Yellow (`badge-mid`) — cost/Km is between average and 120% of average
   - 🔴 Red (`badge-bad`) — cost/Km exceeds 120% of average
+- **📊 Efficiency progress bar:** Each record card shows a thin colored bar along its bottom edge that visually encodes the Km/kWh (or Km/L) efficiency of that session relative to all sessions of the active vehicle. See [Efficiency Progress Bar](#-efficiency-progress-bar) for the full specification.
 - **📊 Inline stat chips on record cards:** Each record card displays three stat chips in a row:
   - 🚩 **Distance** — kilometers traveled for that session.
   - 🔋 / ⛽ **Quantity** — energy (kWh) or fuel (Liters) consumed.
@@ -135,6 +137,74 @@ The same migration logic applies when importing a legacy JSON export file.
 - **🔔 Toast notifications:** Non-intrusive, auto-dismissing toast messages (max 3 at once) appear after every user action (save, delete, export, import, vehicle changes), with ✓ / ✕ / ⚠ icons.
 - **⚡ Ripple effect:** All interactive buttons and tappable elements feature a touch-responsive radial ripple animation for tactile feedback.
 - **🃏 Card hover animations:** All cards lift slightly (`translateY(-2px)`) on hover with a shadow effect for depth.
+
+### 📊 Efficiency Progress Bar
+
+Each record card displays a **thin colored horizontal bar** anchored to the bottom edge of the card. This bar encodes the **Km/kWh** (electric vehicles) or **Km/L** (combustion vehicles) efficiency of that individual session, positioned and colored relative to the full efficiency range across **all records of the active vehicle**.
+
+#### How It Works
+
+1. **Efficiency value** — For each record, the per-session efficiency is computed as:
+   ```
+   kmpu = distanceKm / quantity          // e.g. 320 Km / 55 kWh = 5.82 Km/kWh
+   ```
+   If `quantity` is zero (edge case), `kmpu` defaults to `0`.
+
+2. **Global range** — Before rendering any card, the function scans all sorted records of the active vehicle and computes:
+   ```
+   globalMinKpu = Math.min(...allKmPerUnit)
+   globalMaxKpu = Math.max(...allKmPerUnit)
+   kpuRange     = globalMaxKpu - globalMinKpu
+   ```
+
+3. **Bar width percentage** — The bar width is a normalized 0–100% position of the record's efficiency within the global range:
+   ```
+   effPct = kpuRange > 0
+     ? Math.round(((kmpu - globalMinKpu) / kpuRange) * 100)
+     : 50    // fallback when all records have identical efficiency
+   ```
+   - `effPct = 0` → lowest efficiency session (bar is barely visible).
+   - `effPct = 100` → best efficiency session (bar spans the full card width).
+   - `effPct = 50` → default when there is no variance (single record or all identical).
+
+4. **Color interpolation** — The bar color transitions smoothly across a **red → orange → green** gradient via two linear interpolations:
+   - **Lower half** (`effPct` 0–50): interpolates between **red** (`rgb(239, 68, 68)`) and **orange-yellow** (`rgb(245, 158, 11)`).
+     ```
+     t      = effPct / 50
+     r      = 239 + (245 - 239) * t   →  239 … 245
+     g      =  68 + (158 -  68) * t   →   68 … 158
+     b      =  68 + ( 11 -  68) * t   →   68 …  11
+     ```
+   - **Upper half** (`effPct` 51–100): interpolates between **orange-yellow** (`rgb(245, 158, 11)`) and **green** (`rgb(16, 185, 129)`).
+     ```
+     t      = (effPct - 50) / 50
+     r      = 245 + ( 16 - 245) * t   →  245 …  16
+     g      = 158 + (185 - 158) * t   →  158 … 185
+     b      =  11 + (129 -  11) * t   →   11 … 129
+     ```
+
+   The resulting color spectrum at a glance:
+
+   | `effPct` | Color | Meaning |
+   |---|---|---|
+   | 0 | 🔴 Red (`#EF4444`) | Lowest efficiency in the dataset |
+   | 25 | 🔴🟠 Red-Orange | Below-average efficiency |
+   | 50 | 🟡 Yellow (`#F59E0B`) | Mid-range efficiency |
+   | 75 | 🟡🟢 Yellow-Green | Above-average efficiency |
+   | 100 | 🟢 Green (`#10B981`) | Best efficiency in the dataset |
+
+5. **Tooltip** — Hovering over (or long-pressing on mobile) the bar shows a native HTML `title` tooltip:
+   ```
+   Efficiency: 5.82 Km/kWh (73% of range)
+   ```
+
+#### Interaction With Filtering and Pagination
+
+- The efficiency range (`globalMinKpu` / `globalMaxKpu`) is computed over **all records of the active vehicle** that match the current sort order, **not just the current page**. This ensures bar widths are consistent as the user pages through records.
+- When the active vehicle is switched, the range is fully recomputed against the new vehicle's record set.
+- When only a single record exists (or all records share the same efficiency value), `kpuRange` equals `0` and every bar defaults to `50%` width and amber color to avoid a division-by-zero rendering artifact.
+
+---
 
 ### 📊 Statistics Tab
 
@@ -231,6 +301,8 @@ All charts feature:
 │  │ 08/03/2026               🟢 €0.14/Km │    │  ← Record card (season-colored border)
 │  │ 🚩 320Km | 🔋 55kWh | ♻️ 5.82Km/kWh  │    │
 │  │ € 13.75 💵  Shell Station 📍     📋  │    │
+│  │                                      │    │
+│  │▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░     │    │  ← Efficiency bar (green ~73%)
 │  └──────────────────────────────────────┘    │
 │         [← Prev]  1  2  3  [Next →]          │  ← Pagination
 ...                                          ...

@@ -232,6 +232,12 @@ html, body {
   animation: cardIn 300ms cubic-bezier(0.4,0,0.2,1) both;
 }
 .record-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); border-color: var(--border-active); }
+.efficiency-bar {
+  position: absolute; bottom: 0; left: 0; height: 3px;
+  border-radius: 0 0 0 var(--radius-lg);
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  pointer-events: none;
+}
 .record-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
@@ -629,7 +635,6 @@ textarea.form-input { resize: vertical; min-height: 72px; }
 .import-choice-title { font-weight: 700; font-size: var(--text-sm); margin-bottom: 3px; }
 .import-choice-desc { font-size: var(--text-xs); color: var(--text-muted); }
 
-/* DATE INPUT fix for dark */
 input[type="date"], input[type="number"], input[type="text"], select, textarea {
   color-scheme: dark;
 }
@@ -1229,7 +1234,6 @@ function saveVehicle() {
 }
 
 function confirmDeleteVehicle(id) {
-  // Re-render vehicles first to ensure fresh DOM, then show confirm in inline wrap
   renderVehicles();
   var wrap = document.getElementById('vehicle-delete-inline-wrap');
   if (!wrap) return;
@@ -1331,6 +1335,11 @@ function renderRecordList() {
   const allCpkm = sorted.map(r => r.costPerKm);
   const avgCpkm = allCpkm.reduce((a,b)=>a+b,0)/allCpkm.length;
 
+  const allKmPerUnit = sorted.map(r => r.quantity > 0 ? r.distanceKm / r.quantity : 0);
+  const globalMinKpu = Math.min(...allKmPerUnit);
+  const globalMaxKpu = Math.max(...allKmPerUnit);
+  const kpuRange = globalMaxKpu - globalMinKpu;
+
   const totalPages = Math.ceil(sorted.length / AppState.pageSize);
   if (AppState.currentPage > totalPages) AppState.currentPage = 1;
   const start = (AppState.currentPage - 1) * AppState.pageSize;
@@ -1345,6 +1354,25 @@ function renderRecordList() {
     else if (cpkm > avgCpkm) badgeClass = 'badge-mid';
     const hasNote = r.notes && r.notes.trim().length > 0;
     const loc = r.location ? `<div class="record-location">📍 ${r.location}${hasNote ? '<span class="note-icon" title="Has note">📋</span>' : ''}</div>` : '';
+
+    const kmpu = r.quantity > 0 ? r.distanceKm / r.quantity : 0;
+    const effPct = kpuRange > 0 ? Math.round(((kmpu - globalMinKpu) / kpuRange) * 100) : 50;
+
+    let effColor;
+    if (effPct <= 50) {
+      const t = effPct / 50;
+      const r2 = Math.round(239 + (245 - 239) * t);
+      const g2 = Math.round(68  + (158 - 68)  * t);
+      const b2 = Math.round(68  + (11  - 68)  * t);
+      effColor = `rgb(${r2},${g2},${b2})`;
+    } else {
+      const t = (effPct - 50) / 50;
+      const r2 = Math.round(245 + (16  - 245) * t);
+      const g2 = Math.round(158 + (185 - 158) * t);
+      const b2 = Math.round(11  + (129 - 11)  * t);
+      effColor = `rgb(${r2},${g2},${b2})`;
+    }
+
     return `<div class="record-card season-${season} ripple-host" style="animation-delay:${i*40}ms" data-id="${r.id}" onclick="handleCardClick(event, '${r.id}')">
       <div class="record-row">
         <span class="record-date">${r.date.split('-').reverse().join('/')}</span>
@@ -1362,6 +1390,7 @@ function renderRecordList() {
       <button class="menu-btn ripple-host" aria-label="Record options" onclick="toggleMenu(event,'${r.id}')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
       </button>
+      <div class="efficiency-bar" style="width:${effPct}%;background:${effColor}" title="Efficiency: ${kmpu.toFixed(2)} Km/${unitLabel()} (${effPct}% of range)"></div>
     </div>`;
   }).join('');
 
@@ -1649,7 +1678,6 @@ function getYears() {
 }
 
 function animVal(val, type) {
-  // Returns a formatted placeholder; animateNumbers() will animate to the real value
   if (type === 'price') return val.toFixed(2);
   return val.toFixed(2);
 }
@@ -1713,7 +1741,6 @@ function renderStatsContent() {
     `<div class="section-hdr"><span class="section-title">📊 Additional Stats</span></div>` +
     extraCards;
 
-  // animate numbers
   animateNumbers(stats);
 }
 
@@ -2119,7 +2146,6 @@ function doImport(mode) {
   const impRecords = imp.records;
   const impVehicles = imp.vehicles || [];
 
-  // Create any vehicle profiles from the import file that don't already exist
   const existingVehicleIds = new Set(AppState.vehicles.map(v => v.id));
   impVehicles.forEach(function(iv) {
     if (iv.vehicleId && !existingVehicleIds.has(iv.vehicleId)) {
@@ -2128,7 +2154,6 @@ function doImport(mode) {
     }
   });
 
-  // For any record whose vehicleId is still not resolvable, fall back to first available vehicle
   const fallbackVehicleId = AppState.activeVehicleId || (AppState.vehicles.length > 0 ? AppState.vehicles[0].id : null);
   const sanitized = impRecords.map(r => (r.vehicleId && existingVehicleIds.has(r.vehicleId)) ? r : { ...r, vehicleId: fallbackVehicleId });
 

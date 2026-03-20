@@ -30,7 +30,7 @@
   --border-subtle: rgba(255,255,255,0.08);
   --border-active: rgba(59,130,246,0.6);
   --text-xs: 12px;
-  --text-sm: 13px;
+  --text-sm: 12px;
   --text-base: 15px;
   --text-lg: 18px;
   --text-xl: 22px;
@@ -274,7 +274,7 @@ html, body {
 .stat-chip {
   display: flex; align-items: center; gap: 4px;
   background: var(--bg-tertiary); border-radius: 8px;
-  padding: 4px 10px;
+  padding: 3px 6px;
   font-size: var(--text-sm); color: var(--text-secondary);
 }
 .stat-chip .chip-val { font-family: var(--font-mono); color: var(--text-primary); font-weight: 500; }
@@ -501,12 +501,60 @@ textarea.form-input { resize: vertical; min-height: 72px; }
 .computed-field {
   background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.2);
   border-radius: var(--radius-md); padding: 10px 14px;
-  display: flex; justify-content: space-between; align-items: center;
+  display: grid; justify-content: space-between; align-items: center;
 }
 .computed-label { font-size: var(--text-sm); color: var(--text-secondary); }
 .computed-value { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 700; color: var(--accent-primary); }
 
+/* SOC CHARGE PROGRESS BAR */
+.soc-progress-wrap {
+  margin-bottom: 14px;
+  background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 12px 14px;
+  display: none;
+}
+.soc-progress-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.soc-progress-title {
+  font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.soc-progress-labels {
+  display: flex; justify-content: space-between; align-items: center; gap: 6px;
+}
+.soc-progress-label {
+  font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted);
+}
+.soc-progress-label span {
+  font-weight: 700; color: var(--text-primary);
+}
+.soc-progress-arrow { color: var(--text-muted); font-size: 11px; }
+.soc-progress-track {
+  position: relative; height: 14px; border-radius: 7px;
+  background: rgba(255,255,255,0.07);
+  margin-bottom: 6px;
+}
+.soc-progress-fill {
+  position: absolute; top: 0; height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #3B82F6 0%, #06B6D4 60%, #10B981 100%);
+  box-shadow: 0 0 10px rgba(59,130,246,0.5);
+  transition: left 0.4s cubic-bezier(0.4,0,0.2,1), width 0.4s cubic-bezier(0.4,0,0.2,1);
+  min-width: 0;
+}
+.soc-progress-pct {
+  text-align: center;
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.soc-progress-pct span {
+  font-weight: 700; color: var(--accent-secondary);
+}
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-single { display: grid; grid-template-columns: 1fr; }
 
 /* BUTTONS */
 .btn {
@@ -791,28 +839,70 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
     <form id="refuel-form" novalidate>
       <input type="hidden" id="field-id">
       <input type="hidden" id="field-created-at">
-      <div class="form-row">
+      <div class="form-row-single">
         <div class="form-group">
           <label class="form-label" for="field-date">Date</label>
           <input type="date" class="form-input" id="field-date" required aria-label="Date">
           <div class="form-error">Date is required</div>
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="field-distance">Distance (Km)</label>
           <input type="number" class="form-input" id="field-distance" min="0.1" step="0.1" placeholder="" required aria-label="Distance in Km">
           <div class="form-error">Must be > 0</div>
         </div>
+        <div class="form-group">
+          <label class="form-label" id="label-price" for="field-price">Price per kWh (€)</label>
+          <input type="number" class="form-input" id="field-price" min="0" step="0.01" placeholder="" required aria-label="Unit price">
+          <div class="form-error">Must be > 0</div>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" id="label-quantity" for="field-quantity">Quantity (kWh)</label>
+          <label class="form-label" id="label-quantity" for="field-quantity">Refuel (kWh)</label>
           <input type="number" class="form-input" id="field-quantity" min="0.01" step="0.01" placeholder="" required aria-label="Quantity">
-          <div class="form-error">Must be > 0</div>
+          <div class="form-error" id="field-quantity-error">Must be > 0</div>
         </div>
         <div class="form-group">
-          <label class="form-label" id="label-price" for="field-price">Price per kWh (€)</label>
-          <input type="number" class="form-input" id="field-price" min="0.01" step="0.01" placeholder="" required aria-label="Unit price">
-          <div class="form-error">Must be > 0</div>
+          <label class="form-label" id="label-transfer-efficiency" for="field-transfer-efficiency">Transfer Efficiency (%)</label>
+          <input type="number" class="form-input" id="field-transfer-efficiency" min="0" max="100" step="0.01" placeholder="100" aria-label="Transfer efficiency percentage">
+        </div>
+      </div>
+      <div class="form-row" id="soc-fields-row" style="display:none">
+        <div class="form-group">
+          <label class="form-label" id="label-initial-soc" for="field-initial-soc">Initial SoC (%)</label>
+          <input type="number" class="form-input" id="field-initial-soc" min="0" max="100" step="0.1" placeholder="" aria-label="Initial state of charge (%)">
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="label-final-soc">Final SoC (%)</label>
+          <input type="number" class="form-input" id="field-final-soc" min="0" max="100" step="1" placeholder="" aria-label="Final state of charge (%)" readonly style="opacity:0.7;cursor:not-allowed;">
+        </div>
+      </div>
+      <div class="form-row" id="soc-final-row" style="display:none">
+      </div>
+      <div class="soc-progress-wrap" id="soc-progress-wrap">
+        <div class="soc-progress-header">
+          <span class="soc-progress-title">Charge Progress</span>
+          <div class="soc-progress-labels">
+            <span class="soc-progress-label">Initial: <span id="soc-prog-initial">—</span></span>
+            <span class="soc-progress-arrow">▶</span>
+            <span class="soc-progress-label">Final: <span id="soc-prog-final">—</span></span>
+          </div>
+        </div>
+        <div class="soc-progress-track">
+          <div class="soc-progress-fill" id="soc-prog-fill"></div>
+        </div>
+        <div class="soc-progress-pct">Charged: <span id="soc-prog-delta">—</span></div>
+      </div>
+      <div class="form-row" id="soc-computed-row" style="display:none;margin-bottom:14px">
+        <div class="computed-field">
+          <span class="computed-label" id="label-prev-final-soc">Previous Final SoC</span>
+          <span class="computed-value" id="computed-prev-final-soc">—</span>
+        </div>
+        <div class="computed-field">
+          <span class="computed-label" id="label-effective-energy">Effective Energy Used</span>
+          <span class="computed-value" id="computed-effective-energy">—</span>
         </div>
       </div>
       <div class="form-row" style="margin-bottom:14px">
@@ -921,6 +1011,14 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
         <button type="button" class="unit-pill ripple-host" id="vpill-kwh" onclick="setVehicleUnit('kWh')" aria-label="Use kWh unit">🔋 kWh</button>
         <button type="button" class="unit-pill ripple-host" id="vpill-l" onclick="setVehicleUnit('L')" aria-label="Use Liters unit">⛽ Liters</button>
       </div>
+    </div>
+    <div class="form-group" id="vfield-battery-group" style="display:none">
+      <label class="form-label" for="vfield-battery">Battery Capacity (kWh)</label>
+      <input type="number" class="form-input" id="vfield-battery" min="1" step="0.1" placeholder="If not valued, a full refuel is always assumed" aria-label="Battery capacity in kWh">
+    </div>
+    <div class="form-group" id="vfield-tank-group" style="display:none">
+      <label class="form-label" for="vfield-tank">Tank Capacity (L)</label>
+      <input type="number" class="form-input" id="vfield-tank" min="1" step="0.1" placeholder="If not valued, a full refuel is always assumed" aria-label="Tank capacity in liters">
     </div>
     <div id="vehicle-delete-confirm-wrap"></div>
     <button type="button" class="btn btn-primary ripple-host" onclick="saveVehicle()">
@@ -1090,6 +1188,7 @@ function computeStats(recs) {
   const costs = recs.map(r => r.totalCost);
   const cpkms = recs.map(r => r.costPerKm);
   const qtys = recs.map(r => r.quantity);
+  const effQtys = recs.map(r => r.effectiveQuantity || r.quantity);
   const dists = recs.map(r => r.distanceKm);
   return {
     count: recs.length,
@@ -1100,8 +1199,8 @@ function computeStats(recs) {
     totalDist: dists.reduce((a,b)=>a+b,0),
     totalQty: qtys.reduce((a,b)=>a+b,0),
     avgCpkm: cpkms.reduce((a,b)=>a+b,0)/cpkms.length,
-    avgConsumption: recs.reduce((a,r) => a + (r.quantity / r.distanceKm * 100), 0) / recs.length,
-    avgKmPerUnit: dists.reduce((a,b)=>a+b,0) / qtys.reduce((a,b)=>a+b,0),
+    avgConsumption: recs.reduce((a,r) => { const e = r.effectiveEnergyConsumed != null ? r.effectiveEnergyConsumed : (r.effectiveQuantity || r.quantity); return a + (e / r.distanceKm * 100); }, 0) / recs.length,
+    avgKmPerUnit: dists.reduce((a,b)=>a+b,0) / recs.reduce((a,r) => { const e = r.effectiveEnergyConsumed != null ? r.effectiveEnergyConsumed : (r.effectiveQuantity || r.quantity); return a + e; }, 0),
   };
 }
 
@@ -1189,13 +1288,19 @@ function openVehicleForm(id) {
     if (v) {
       document.getElementById('vfield-name').value = v.name;
       AppState.pendingVehicleUnit = v.unit || 'kWh';
+      document.getElementById('vfield-battery').value = v.batteryCapacityKwh != null ? v.batteryCapacityKwh : '';
+      document.getElementById('vfield-tank').value = v.tankCapacityL != null ? v.tankCapacityL : '';
     }
   } else {
     document.getElementById('vfield-name').value = '';
     AppState.pendingVehicleUnit = 'kWh';
+    document.getElementById('vfield-battery').value = '';
+    document.getElementById('vfield-tank').value = '';
   }
   document.getElementById('vpill-kwh').classList.toggle('active', AppState.pendingVehicleUnit === 'kWh');
   document.getElementById('vpill-l').classList.toggle('active', AppState.pendingVehicleUnit === 'L');
+  document.getElementById('vfield-battery-group').style.display = AppState.pendingVehicleUnit === 'kWh' ? '' : 'none';
+  document.getElementById('vfield-tank-group').style.display = AppState.pendingVehicleUnit === 'L' ? '' : 'none';
   openModal('modal-vehicle-form');
 }
 
@@ -1203,6 +1308,8 @@ function setVehicleUnit(u) {
   AppState.pendingVehicleUnit = u;
   document.getElementById('vpill-kwh').classList.toggle('active', u === 'kWh');
   document.getElementById('vpill-l').classList.toggle('active', u === 'L');
+  document.getElementById('vfield-battery-group').style.display = u === 'kWh' ? '' : 'none';
+  document.getElementById('vfield-tank-group').style.display = u === 'L' ? '' : 'none';
 }
 
 function saveVehicle() {
@@ -1215,15 +1322,19 @@ function saveVehicle() {
   }
   nameEl.classList.remove('error');
   var id = document.getElementById('vfield-id').value;
+  var battVal = parseFloat(document.getElementById('vfield-battery').value);
+  var tankVal = parseFloat(document.getElementById('vfield-tank').value);
+  var batteryCapacityKwh = (AppState.pendingVehicleUnit === 'kWh' && !isNaN(battVal) && battVal > 0) ? battVal : null;
+  var tankCapacityL = (AppState.pendingVehicleUnit === 'L' && !isNaN(tankVal) && tankVal > 0) ? tankVal : null;
   if (id) {
     var idx = AppState.vehicles.findIndex(function(v) { return v.id === id; });
     if (idx !== -1) {
-      AppState.vehicles[idx] = { id: AppState.vehicles[idx].id, name: name, unit: AppState.pendingVehicleUnit };
+      AppState.vehicles[idx] = { id: AppState.vehicles[idx].id, name: name, unit: AppState.pendingVehicleUnit, batteryCapacityKwh: batteryCapacityKwh, tankCapacityL: tankCapacityL };
       showToast('Vehicle updated', 'success');
     }
   } else {
     var newId = uuid();
-    AppState.vehicles.push({ id: newId, name: name, unit: AppState.pendingVehicleUnit });
+    AppState.vehicles.push({ id: newId, name: name, unit: AppState.pendingVehicleUnit, batteryCapacityKwh: batteryCapacityKwh, tankCapacityL: tankCapacityL });
     if (!AppState.activeVehicleId) { AppState.activeVehicleId = newId; }
     showToast('Vehicle added', 'success');
   }
@@ -1335,7 +1446,7 @@ function renderRecordList() {
   const allCpkm = sorted.map(r => r.costPerKm);
   const avgCpkm = allCpkm.reduce((a,b)=>a+b,0)/allCpkm.length;
 
-  const allKmPerUnit = sorted.map(r => r.quantity > 0 ? r.distanceKm / r.quantity : 0);
+  const allKmPerUnit = sorted.map(r => { const e = r.effectiveEnergyConsumed != null ? r.effectiveEnergyConsumed : (r.effectiveQuantity || r.quantity); return e > 0 ? r.distanceKm / e : 0; });
   const globalMinKpu = Math.min(...allKmPerUnit);
   const globalMaxKpu = Math.max(...allKmPerUnit);
   const kpuRange = globalMaxKpu - globalMinKpu;
@@ -1355,7 +1466,7 @@ function renderRecordList() {
     const hasNote = r.notes && r.notes.trim().length > 0;
     const loc = r.location ? `<div class="record-location">📍 ${r.location}${hasNote ? '<span class="note-icon" title="Has note">📋</span>' : ''}</div>` : '';
 
-    const kmpu = r.quantity > 0 ? r.distanceKm / r.quantity : 0;
+    const kmpu = (() => { const e = r.effectiveEnergyConsumed != null ? r.effectiveEnergyConsumed : (r.effectiveQuantity || r.quantity); return e > 0 ? r.distanceKm / e : 0; })();
     const effPct = kpuRange > 0 ? Math.round(((kmpu - globalMinKpu) / kpuRange) * 100) : 50;
 
     let effColor;
@@ -1379,12 +1490,13 @@ function renderRecordList() {
         <span class="cost-badge ${badgeClass}">€ ${cpkm.toFixed(2)}/Km</span>
       </div>
       <div class="stat-chips">
-        <div class="stat-chip">🚩 <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
-        <div class="stat-chip">${unitLabel() === 'kWh' ? '🔋' : '⛽'} <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
-        <div class="stat-chip">♻️ <span class="chip-val">${r.quantity > 0 ? (r.distanceKm / r.quantity).toFixed(2) : '—'} Km/${unitLabel()}</span></div>
+        <div class="stat-chip">🚩 Traveled: <span class="chip-val">${r.distanceKm.toFixed(1)} Km</span></div>
+        <div class="stat-chip">♻️ Efficience: <span class="chip-val">${(() => { const e = r.effectiveEnergyConsumed != null ? r.effectiveEnergyConsumed : (r.effectiveQuantity || r.quantity); return e > 0 ? (r.distanceKm / e).toFixed(2) : '—'; })()} Km/${unitLabel()}</span></div>
+        <div class="stat-chip">${unitLabel() === 'kWh' ? '🔋' : '⛽'} Refueled: <span class="chip-val">${r.quantity.toFixed(2)} ${unitLabel()}</span></div>
+        ${r.effectiveEnergyConsumed != null ? `<div class="stat-chip">${unitLabel() === 'kWh' ? '⚡' : '⛽'} Consumed: <span class="chip-val">${r.effectiveEnergyConsumed.toFixed(2)} ${unitLabel()}</span></div>` : ''}
       </div>
       <div class="record-row-cost" style="margin-top:4px">
-        <div><span class="record-cost">💸 € ${r.totalCost.toFixed(2)}</span><span class="record-unit-price"> ( @ € ${r.unitPrice.toFixed(2)}/${unitLabel()} )</span></div>
+        <div><span class="record-cost">💸 € ${r.totalCost.toFixed(2)}</span><span class="record-unit-price"> @ € ${r.unitPrice.toFixed(2)}/${unitLabel()}</span></div>
       </div>
       ${loc}
       <button class="menu-btn ripple-host" aria-label="Record options" onclick="toggleMenu(event,'${r.id}')">
@@ -1445,6 +1557,8 @@ function openForm(id) {
   form.reset();
   document.getElementById('computed-total').textContent = '—';
   document.getElementById('computed-cpkm').textContent = '—';
+  document.getElementById('computed-effective-energy').textContent = '—';
+  document.getElementById('computed-prev-final-soc').textContent = '—';
   document.getElementById('delete-confirm-wrap').innerHTML = '';
   document.getElementById('btn-delete-record').style.display = 'none';
   document.getElementById('btn-duplicate-record').style.display = 'none';
@@ -1456,8 +1570,35 @@ function openForm(id) {
   document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
 
   const u = unitLabel();
-  document.getElementById('label-quantity').textContent = `Quantity (${u})`;
+  document.getElementById('label-quantity').textContent = `Refuel (${u})`;
   document.getElementById('label-price').textContent = `Price per ${u} (€)`;
+
+  // Show SoC/fuel level fields for all vehicle types, with appropriate labels
+  const isKwh = u === 'kWh';
+  document.getElementById('label-initial-soc').textContent = isKwh ? 'Initial SoC (%)' : 'Initial Fuel Level (%)';
+  document.getElementById('label-final-soc').textContent = isKwh ? 'Final SoC (%)' : 'Final Fuel Level (%)';
+  document.getElementById('label-prev-final-soc').textContent = isKwh ? 'Previous Final SoC' : 'Previous Final Fuel Level';
+  document.getElementById('label-effective-energy').textContent = isKwh ? 'Effective Energy Used' : 'Effective Fuel Consumed';
+  document.getElementById('soc-fields-row').style.display = '';
+  document.getElementById('soc-final-row').style.display = '';
+  document.getElementById('soc-computed-row').style.display = '';
+
+  // Transfer Efficiency: editable for BEV (default 100%), fixed at 100% for ICE
+  const teField = document.getElementById('field-transfer-efficiency');
+  const teLabel = document.getElementById('label-transfer-efficiency');
+  if (isKwh) {
+    teField.value = 100;
+    teField.removeAttribute('readonly');
+    teField.style.opacity = '';
+    teField.style.cursor = '';
+    teLabel.textContent = 'Transfer Efficiency (%)';
+  } else {
+    teField.value = 100;
+    teField.setAttribute('readonly', 'readonly');
+    teField.style.opacity = '0.7';
+    teField.style.cursor = 'not-allowed';
+    teLabel.textContent = 'Transfer Efficiency (%)';
+  }
 
   if (id) {
     const rec = AppState.records.find(r => r.id === id);
@@ -1471,18 +1612,74 @@ function openForm(id) {
       document.getElementById('field-location').value = rec.location || '';
       document.getElementById('field-notes').value = rec.notes || '';
       document.getElementById('notes-count').textContent = (rec.notes || '').length;
-      updateComputed();
+      if (isKwh) {
+        document.getElementById('field-initial-soc').value = rec.initialSoC != null ? rec.initialSoC : '';
+        document.getElementById('field-final-soc').value = rec.finalSoC != null ? rec.finalSoC : '';
+      } else {
+        document.getElementById('field-initial-soc').value = rec.initialFuelLevel != null ? rec.initialFuelLevel : '';
+        document.getElementById('field-final-soc').value = rec.finalFuelLevel != null ? rec.finalFuelLevel : '';
+      }
       document.getElementById('btn-delete-record').style.display = 'flex';
       document.getElementById('btn-duplicate-record').style.display = 'flex';
+      // Load transferEfficiency from saved record (fallback to default)
+      const savedTE = rec.transferEfficiency != null ? rec.transferEfficiency : (isKwh ? 100 : 100);
+      const teFieldEdit = document.getElementById('field-transfer-efficiency');
+      teFieldEdit.value = savedTE;
+      if (!isKwh) {
+        teFieldEdit.value = 100;
+        teFieldEdit.setAttribute('readonly', 'readonly');
+        teFieldEdit.style.opacity = '0.7';
+        teFieldEdit.style.cursor = 'not-allowed';
+      }
     }
   } else {
     document.getElementById('form-modal-title').textContent = 'Add Refueling Record';
     document.getElementById('field-id').value = '';
   }
+  updateComputed();
   openModal('modal-form');
 }
 
 function closeForm() { closeModal('modal-form'); }
+
+function getPreviousFinalSoC(currentRecordId, currentDate, currentCreatedAt) {
+  // Get all records for the active vehicle sorted by date ascending
+  const vehicleRecs = AppState.activeVehicleId
+    ? AppState.records.filter(r => r.vehicleId === AppState.activeVehicleId)
+    : AppState.records;
+  // Exclude the record being edited (if any)
+  const others = vehicleRecs.filter(r => r.id !== currentRecordId);
+  // Sort by date ascending, then by createdAt ascending
+  const sorted = [...others].sort((a,b) => {
+    const d = a.date.localeCompare(b.date);
+    return d !== 0 ? d : (a.createdAt || '').localeCompare(b.createdAt || '');
+  });
+  // Find the most recent record before the current one:
+  // - strictly earlier date, OR
+  // - same date with earlier createdAt (or no createdAt constraint for new unsaved records)
+  let prev = null;
+  for (let i = 0; i < sorted.length; i++) {
+    const r = sorted[i];
+    if (r.date < currentDate) {
+      prev = r;
+    } else if (r.date === currentDate) {
+      // For a new record (currentCreatedAt empty/null), all existing same-date records are previous
+      // For an existing record, only include same-date records saved before it
+      if (!currentCreatedAt || (r.createdAt || '') < currentCreatedAt) {
+        prev = r;
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  if (!prev) return null;
+  // Return finalSoC for BEV, finalFuelLevel for ICE
+  const isKwh = unitLabel() === 'kWh';
+  return isKwh ? (prev.finalSoC != null ? prev.finalSoC : null)
+               : (prev.finalFuelLevel != null ? prev.finalFuelLevel : null);
+}
 
 function updateComputed() {
   const qty = parseFloat(document.getElementById('field-quantity').value) || 0;
@@ -1492,9 +1689,87 @@ function updateComputed() {
   const cpkm = dist > 0 ? total / dist : 0;
   document.getElementById('computed-total').textContent = total > 0 ? `€ ${total.toFixed(2)}` : '—';
   document.getElementById('computed-cpkm').textContent = cpkm > 0 ? `€ ${cpkm.toFixed(2)}` : '—';
+
+  // Effective consumption (both BEV and ICE)
+  const isKwh = unitLabel() === 'kWh';
+  const unit = isKwh ? 'kWh' : 'L';
+  const currentId = document.getElementById('field-id').value || null;
+  const currentDate = document.getElementById('field-date').value;
+  const currentCreatedAt = document.getElementById('field-created-at').value || null;
+  const initialLevelPct = parseFloat(document.getElementById('field-initial-soc').value);
+
+  // Get vehicle capacity for converting % to absolute values
+  const v = getActiveVehicle();
+  const capacity = isKwh
+    ? (v && v.batteryCapacityKwh ? v.batteryCapacityKwh : null)
+    : (v && v.tankCapacityL ? v.tankCapacityL : null);
+
+  // Auto-calculate Final SoC% = clamp(Initial SoC% + (qty * transferEfficiency/100) / capacity * 100, 0, 100)
+  const teRaw = parseFloat(document.getElementById('field-transfer-efficiency').value);
+  const transferEfficiency = (!isNaN(teRaw) && teRaw >= 0 && teRaw <= 100) ? teRaw : (isKwh ? 100 : 100);
+  const finalSoCField = document.getElementById('field-final-soc');
+  if (!isNaN(initialLevelPct) && initialLevelPct >= 0 && qty > 0 && capacity != null) {
+    const effectiveQtyAbsolute = qty * (transferEfficiency / 100);
+    const addedPct = (effectiveQtyAbsolute / capacity) * 100;
+    const computedFinalPct = Math.min(100, initialLevelPct + addedPct);
+    finalSoCField.value = computedFinalPct.toFixed(0);
+  } else if (!isNaN(initialLevelPct) && initialLevelPct >= 0) {
+    finalSoCField.value = capacity != null ? initialLevelPct.toFixed(0) : '';
+  } else {
+    finalSoCField.value = '';
+  }
+
+  let prevFinalPctFromRecord = getPreviousFinalSoC(currentId, currentDate, currentCreatedAt);
+  let prevFinalPct = prevFinalPctFromRecord;
+  if (prevFinalPct == null) {
+    // Fallback: assume 100%
+    prevFinalPct = 100;
+  }
+
+  // Display Previous Final SoC / Fuel Level
+  if (prevFinalPctFromRecord != null) {
+    document.getElementById('computed-prev-final-soc').textContent = `${prevFinalPctFromRecord.toFixed(1)} %`;
+  } else {
+    document.getElementById('computed-prev-final-soc').textContent = `100 % (assumed)`;
+  }
+
+  // Display Effective Energy / Fuel Consumed
+  if (!isNaN(initialLevelPct) && initialLevelPct >= 0) {
+    const consumedPct = prevFinalPct - initialLevelPct;
+    if (capacity != null) {
+      const consumedAbsolute = (consumedPct / 100) * capacity;
+      document.getElementById('computed-effective-energy').textContent =
+        consumedAbsolute >= 0 ? `${consumedAbsolute.toFixed(2)} ${unit}` : `${consumedAbsolute.toFixed(2)} ${unit} ⚠`;
+    } else {
+      document.getElementById('computed-effective-energy').textContent =
+        consumedPct >= 0 ? `${consumedPct.toFixed(1)} %` : `${consumedPct.toFixed(1)} % ⚠`;
+    }
+  } else {
+    document.getElementById('computed-effective-energy').textContent = '—';
+  }
+  updateSoCProgressBar();
 }
 
-['field-quantity','field-price','field-distance'].forEach(id => {
+function updateSoCProgressBar() {
+  const wrap = document.getElementById('soc-progress-wrap');
+  const socRow = document.getElementById('soc-fields-row');
+  if (!socRow || socRow.style.display === 'none') { wrap.style.display = 'none'; return; }
+  const initialVal = parseFloat(document.getElementById('field-initial-soc').value);
+  const finalVal = parseFloat(document.getElementById('field-final-soc').value);
+  if (isNaN(initialVal) || isNaN(finalVal)) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  const initial = Math.max(0, Math.min(100, initialVal));
+  const final_ = Math.max(0, Math.min(100, finalVal));
+  const delta = Math.max(0, final_ - initial);
+  document.getElementById('soc-prog-initial').textContent = initial.toFixed(0) + '%';
+  document.getElementById('soc-prog-final').textContent = final_.toFixed(0) + '%';
+  document.getElementById('soc-prog-delta').textContent = '+' + delta.toFixed(0) + '%';
+  const fill = document.getElementById('soc-prog-fill');
+  fill.style.left = initial + '%';
+  fill.style.width = (final_ - initial) + '%';
+}
+
+['field-quantity','field-price','field-distance','field-initial-soc','field-transfer-efficiency','field-date'].forEach(id => {
   document.getElementById(id).addEventListener('input', updateComputed);
 });
 document.getElementById('field-notes').addEventListener('input', function() {
@@ -1507,7 +1782,7 @@ function validateForm() {
     { el: document.getElementById('field-date'), check: v => v !== '' },
     { el: document.getElementById('field-distance'), check: v => parseFloat(v) > 0 },
     { el: document.getElementById('field-quantity'), check: v => parseFloat(v) > 0 },
-    { el: document.getElementById('field-price'), check: v => parseFloat(v) > 0 },
+    { el: document.getElementById('field-price'), check: v => parseFloat(v) >= 0 },
   ];
   fields.forEach(({el, check}) => {
     const ok = check(el.value);
@@ -1515,6 +1790,47 @@ function validateForm() {
     el.classList.toggle('valid', ok);
     if (!ok) { el.classList.add('shake'); el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true}); valid = false; }
   });
+
+  // Optional range-bounded fields: validate only when a value is entered
+  const rangeFields = [
+    { el: document.getElementById('field-initial-soc'), check: v => v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 100) },
+    { el: document.getElementById('field-transfer-efficiency'), check: v => v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 100) },
+    { el: document.getElementById('field-final-soc'), check: v => v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 100) },
+  ];
+  rangeFields.forEach(({el, check}) => {
+    const ok = check(el.value);
+    el.classList.toggle('error', !ok);
+    if (!ok) { el.classList.add('shake'); el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true}); valid = false; }
+  });
+
+  // Check that Refuel value does not cause Final SoC to exceed 100%
+  const qtyEl = document.getElementById('field-quantity');
+  const qtyErrEl = document.getElementById('field-quantity-error');
+  const initialSoCVal = parseFloat(document.getElementById('field-initial-soc').value);
+  const qtyVal = parseFloat(qtyEl.value);
+  const teRawVal = parseFloat(document.getElementById('field-transfer-efficiency').value);
+  const teVal = (!isNaN(teRawVal) && teRawVal >= 0 && teRawVal <= 100) ? teRawVal : 100;
+  const isKwhVal = unitLabel() === 'kWh';
+  const vVal = getActiveVehicle();
+  const capacityVal = isKwhVal
+    ? (vVal && vVal.batteryCapacityKwh ? vVal.batteryCapacityKwh : null)
+    : (vVal && vVal.tankCapacityL ? vVal.tankCapacityL : null);
+  if (!isNaN(initialSoCVal) && initialSoCVal >= 0 && !isNaN(qtyVal) && qtyVal > 0 && capacityVal != null) {
+    const addedPct = (qtyVal * (teVal / 100) / capacityVal) * 100;
+    const projectedFinalSoC = initialSoCVal + addedPct;
+    if (projectedFinalSoC > 100) {
+      const maxAllowedQty = ((100 - initialSoCVal) / 100 * capacityVal) / (teVal / 100);
+      qtyErrEl.textContent = `Refuel value too high: 'Final SoC' would reach ${projectedFinalSoC.toFixed(1)}%. Max allowed: ${maxAllowedQty.toFixed(2)}`;
+      qtyEl.classList.add('error', 'shake');
+      qtyEl.addEventListener('animationend', () => qtyEl.classList.remove('shake'), {once:true});
+      valid = false;
+    } else {
+      qtyErrEl.textContent = 'Must be > 0';
+    }
+  } else {
+    qtyErrEl.textContent = 'Must be > 0';
+  }
+
   return valid;
 }
 
@@ -1528,6 +1844,51 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
   const total = qty * price;
   const cpkm = total / dist;
   const now = new Date().toISOString();
+
+  // SoC / Fuel level fields (stored as percentages, 0–100)
+  const isKwh = unitLabel() === 'kWh';
+  const levelRaw = parseFloat(document.getElementById('field-initial-soc').value);
+  const finalLevelRaw = parseFloat(document.getElementById('field-final-soc').value);
+  const initialLevel = (!isNaN(levelRaw) && levelRaw >= 0 && levelRaw <= 100) ? levelRaw : null;
+  const finalLevel = (!isNaN(finalLevelRaw) && finalLevelRaw >= 0 && finalLevelRaw <= 100) ? finalLevelRaw : null;
+
+  // Read transfer efficiency (always 100 for ICE)
+  const teRaw = parseFloat(document.getElementById('field-transfer-efficiency').value);
+  const transferEfficiency = isKwh
+    ? ((!isNaN(teRaw) && teRaw >= 0 && teRaw <= 100) ? teRaw : 100)
+    : 100;
+
+  // Effective quantity = energy actually delivered to the battery
+  const effectiveQuantity = qty * (transferEfficiency / 100);
+
+  // Get vehicle capacity for computing absolute effective energy consumed
+  const v = getActiveVehicle();
+  const capacity = isKwh
+    ? (v && v.batteryCapacityKwh ? v.batteryCapacityKwh : null)
+    : (v && v.tankCapacityL ? v.tankCapacityL : null);
+
+  // Compute effective consumed (in absolute units, using capacity if available)
+  let effectiveEnergyConsumed = null;
+  if (initialLevel != null) {
+    const currentDate = document.getElementById('field-date').value;
+    const currentCreatedAt = document.getElementById('field-created-at').value || null;
+    let prevFinalSoCPct = getPreviousFinalSoC(id || null, currentDate, currentCreatedAt);
+    if (prevFinalSoCPct == null) {
+      prevFinalSoCPct = 100; // assume full
+    }
+    const consumedPct = prevFinalSoCPct - initialLevel;
+    if (capacity != null) {
+      effectiveEnergyConsumed = (consumedPct / 100) * capacity;
+    } else {
+      effectiveEnergyConsumed = null; // cannot compute without capacity
+    }
+  }
+
+  // Map to correct field names per vehicle type
+  const socFields = isKwh
+    ? { initialSoC: initialLevel, finalSoC: finalLevel, initialFuelLevel: null, finalFuelLevel: null, transferEfficiency: transferEfficiency, effectiveQuantity: effectiveQuantity }
+    : { initialSoC: null, finalSoC: null, initialFuelLevel: initialLevel, finalFuelLevel: finalLevel, transferEfficiency: 100, effectiveQuantity: effectiveQuantity };
+
   if (id) {
     const idx = AppState.records.findIndex(r => r.id === id);
     if (idx !== -1) {
@@ -1535,6 +1896,8 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
         date: document.getElementById('field-date').value,
         distanceKm: dist, quantity: qty, unitPrice: price,
         totalCost: total, costPerKm: cpkm,
+        ...socFields,
+        effectiveEnergyConsumed: effectiveEnergyConsumed,
         location: document.getElementById('field-location').value.trim() || null,
         notes: document.getElementById('field-notes').value.trim() || null,
         updatedAt: now,
@@ -1550,6 +1913,8 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
       date: document.getElementById('field-date').value,
       distanceKm: dist, quantity: qty, unitPrice: price,
       totalCost: total, costPerKm: cpkm,
+      ...socFields,
+      effectiveEnergyConsumed: effectiveEnergyConsumed,
       location: document.getElementById('field-location').value.trim() || null,
       notes: document.getElementById('field-notes').value.trim() || null,
       createdAt: createdAt, updatedAt: now,
@@ -1596,7 +1961,7 @@ function duplicateRecord() {
   document.getElementById('btn-duplicate-record').style.display = 'none';
   document.querySelectorAll('.form-input').forEach(i => i.classList.remove('error','valid'));
   const u = unitLabel();
-  document.getElementById('label-quantity').textContent = `Quantity (${u})`;
+  document.getElementById('label-quantity').textContent = `Refuel (${u})`;
   document.getElementById('label-price').textContent = `Price per ${u} (€)`;
   document.getElementById('form-modal-title').textContent = 'Duplicate Record';
   document.getElementById('field-id').value = '';
@@ -1608,6 +1973,20 @@ function duplicateRecord() {
   document.getElementById('field-location').value = location;
   document.getElementById('field-notes').value = notes;
   document.getElementById('notes-count').textContent = notes.length;
+  // Restore transfer efficiency from duplicated record
+  const isKwhDup = unitLabel() === 'kWh';
+  const teFieldDup = document.getElementById('field-transfer-efficiency');
+  if (isKwhDup) {
+    teFieldDup.value = rec.transferEfficiency != null ? rec.transferEfficiency : 100;
+    teFieldDup.removeAttribute('readonly');
+    teFieldDup.style.opacity = '';
+    teFieldDup.style.cursor = '';
+  } else {
+    teFieldDup.value = 100;
+    teFieldDup.setAttribute('readonly', 'readonly');
+    teFieldDup.style.opacity = '0.7';
+    teFieldDup.style.cursor = 'not-allowed';
+  }
   updateComputed();
   showToast('Record duplicated — edit the fields and save', 'warning');
 }

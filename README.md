@@ -66,10 +66,8 @@ The vehicle form is presented as a bottom sheet modal with the following fields:
 |---|---|
 | **Name** | Free-text name for the vehicle (max 60 characters). Required. |
 | **Preferred Unit** | Toggle pill: **🔋 kWh** (electric) or **⛽ Liters** (combustion). Determines labels across records, statistics, and charts for this vehicle. |
-
-- The form title changes dynamically between **"Add Vehicle"** and **"Edit Vehicle"** depending on context.
-- If the name field is left blank and the user taps **Save Vehicle**, the field shakes with a validation animation and the save is blocked.
-- On save, the modal closes, the vehicle list re-renders, and the Refueling tab updates to reflect the active vehicle.
+| **🔋 Battery Capacity (kWh)** | *(BEV only, optional)* — the total usable battery capacity in kWh. Used to compute absolute **effective energy consumed** and **Final SoC %** from the refueled quantity. If left empty, a full refuel is assumed. Shown only when the unit is `kWh`. |
+| **⛽ Tank Capacity (L)** | *(ICE only, optional)* — the total fuel tank capacity in liters. Used to compute absolute **effective fuel consumed** and **Final Fuel Level %** from the refueled quantity. If left empty, a full refuel is assumed. Shown only when the unit is `L`. |
 
 #### Data Isolation per Vehicle
 
@@ -108,10 +106,131 @@ The same migration logic applies when importing a legacy JSON export file.
   - 💶 Unit price (€ per kWh or € per Liter)
   - 💰 Total cost (auto-computed in real time)
   - 📊 Cost per Km (auto-computed in real time)
+  - 🔌 Initial SoC / Fuel Level % *(optional)*
+  - 🔋 Final SoC / Fuel Level % *(auto-computed when capacity is set)*
+  - ⚡ Transfer Efficiency % *(BEV only, editable; ICE fixed at 100%)*
+  - ⚡ Effective Energy / Fuel Consumed *(derived from SoC delta and vehicle capacity)*
   - 📍 Location / station name (optional free-text field, max 100 characters)
   - 📝 Notes (optional free-text field, max 500 characters with live character counter)
 - **⚙️ Auto-computed fields:** As the user types quantity and unit price, the **Total Cost** and **Cost per Km** are calculated and displayed live inside the form, before saving.
-- **✅ Form validation:** All required fields (date, distance, quantity, price) are validated on submission. Errors are shown inline with a shake animation on invalid fields.
+- **✅ Form validation:** All required fields (date, distance, quantity, price) are validated on submission. Errors are shown inline with a shake animation on invalid fields. An additional validation prevents the **Final SoC exceeding 100%** when battery capacity is set.
+
+---
+
+### 🔌 State of Charge (SoC) & Fuel Level Tracking
+
+This feature lets users record the battery or tank level before and after each session, unlocking more accurate energy consumption metrics.
+
+#### 📋 Form Fields
+
+When adding or editing a record, the following fields are available (shown for all vehicle types, with labels adjusted per unit):
+
+| Field | Label (BEV) | Label (ICE) | Description |
+|---|---|---|---|
+| **Initial Level** | Initial SoC (%) | Initial Fuel Level (%) | The battery or tank charge level **before** refueling/charging, expressed as a percentage (0–100). Optional. |
+| **Final Level** | Final SoC (%) | Final Fuel Level (%) | Auto-computed from the initial level, quantity, transfer efficiency, and vehicle capacity. Read-only. |
+| **Transfer Efficiency** | Transfer Efficiency (%) | Transfer Efficiency (%) | For **BEV**: the fraction of the charged energy that is actually stored in the battery (default 100%, editable). For **ICE**: always fixed at 100% (read-only, cursor `not-allowed`). |
+
+#### ⚡ Transfer Efficiency (BEV)
+
+The Transfer Efficiency field accounts for charging losses in electric vehicles. It is:
+- **Editable** for BEV vehicles (default 100%).
+- **Fixed at 100%** and read-only for ICE vehicles (no charging losses apply to fuel).
+- Persisted per record in the `transferEfficiency` field.
+- Restored correctly when editing or duplicating a record.
+
+The effective energy actually delivered to the battery is computed as:
+
+```
+effectiveQuantity = quantity × (transferEfficiency / 100)
+```
+
+#### 🔢 Final SoC / Fuel Level Auto-Computation
+
+When the user provides an **Initial Level %** and the vehicle has a **Battery/Tank Capacity** set:
+
+```
+effectiveQtyAbsolute = quantity × (transferEfficiency / 100)
+addedPct             = (effectiveQtyAbsolute / capacity) × 100
+finalSoC             = clamp(initialSoC + addedPct, 0, 100)
+```
+
+The computed **Final SoC %** is displayed in the read-only `Final SoC (%)` field and updates live as the user types. If capacity is not set, the field is left blank.
+
+#### 🔗 Previous Final SoC Chaining (`getPreviousFinalSoC`)
+
+The app automatically looks up the **most recent previous session** (for the same vehicle) to determine the starting state before the current refueling began. This enables tracking how much energy was consumed *between* sessions:
+
+- Records are sorted chronologically (ascending by date, then by `createdAt`).
+- The previous record is the one immediately before the current one by date/time.
+- If no previous record exists, the app assumes **100% (full)** as the baseline.
+- This value is displayed in the form as **"Previous Final SoC"** (or "Previous Final Fuel Level" for ICE).
+
+#### ⚡ Effective Energy / Fuel Consumed
+
+The effective energy consumed between the previous session and the current one is computed from the SoC delta:
+
+```
+consumedPct      = previousFinalSoC% − initialSoC%
+effectiveConsumed = (consumedPct / 100) × capacity    // in kWh or L
+```
+
+- If vehicle capacity is set, the result is shown in absolute units (e.g. `18.40 kWh` or `12.30 L`).
+- If capacity is not set, the result is shown as a percentage delta (e.g. `15.0 %`).
+- A `⚠` warning is appended if the result is negative (indicating an inconsistency in the entered SoC values).
+- The computed value is displayed in the form as **"Effective Energy Used"** (BEV) or **"Effective Fuel Consumed"** (ICE), and is stored in the record as `effectiveEnergyConsumed`.
+
+#### 📊 Charge Progress Bar (in form)
+
+A visual progress bar is shown inside the form whenever both **Initial SoC %** and **Final SoC %** are known:
+
+```
+[■■■░░░░░░░░░░░░■■■■] Initial: 20% ▶ Final: 75%  |  Charged: +55%
+```
+
+- The bar fill starts at `initialSoC%` and extends to `finalSoC%` within a full-width track.
+- The fill uses a blue-to-cyan-to-green gradient (`#3B82F6 → #06B6D4 → #10B981`) with a glow shadow.
+- Labels show the initial and final SoC percentages and the delta (`+N%`).
+- The bar is hidden when either SoC value is unavailable or the SoC row is hidden.
+- Updates live as the user types quantity, initial SoC, or transfer efficiency.
+
+#### 🧩 Record Card: "Consumed" Chip
+
+When a record has `effectiveEnergyConsumed` stored, an additional stat chip is shown on the record card in the Refueling list:
+
+```
+⚡ Consumed: 18.40 kWh    (BEV)
+⛽ Consumed: 12.30 L      (ICE)
+```
+
+This chip is displayed **in addition to** the standard Refueled chip, giving a clear side-by-side view of what was put in vs. what was actually consumed between sessions.
+
+#### 🔢 Impact on Statistics & Charts
+
+When `effectiveEnergyConsumed` is available for a record, it is used **in place of `quantity`** for the following computed metrics:
+
+- **Average Consumption** (Stats tab) — uses `effectiveEnergyConsumed / distanceKm × 100` instead of `quantity / distanceKm × 100`.
+- **Efficiency** (Stats tab) — uses `distanceKm / effectiveEnergyConsumed` instead of `distanceKm / quantity`.
+- **Efficiency Progress Bar** (record card) — uses `distanceKm / effectiveEnergyConsumed` as the `kmpu` value.
+- **Consumption Over Time chart** — uses `effectiveEnergyConsumed` when available.
+- **Efficiency Over Time chart** — uses `effectiveEnergyConsumed` when available.
+
+If `effectiveEnergyConsumed` is `null` (SoC fields not filled or capacity not set), all computations fall back to `effectiveQuantity` (i.e. `quantity × transferEfficiency / 100`), and then to `quantity` as the ultimate fallback.
+
+#### ✅ SoC Overflow Validation
+
+A dedicated validation rule prevents saving a record that would cause the **Final SoC to exceed 100%** given the entered quantity and battery capacity:
+
+```
+projectedFinalSoC = initialSoC% + (quantity × transferEfficiency/100 / capacity × 100)
+
+if projectedFinalSoC > 100:
+  → error: "Refuel value too high: 'Final SoC' would reach X%. Max allowed: Y"
+```
+
+The **Quantity** field is highlighted in red with a shake animation, and the error message includes both the projected overflow value and the maximum allowed quantity. The save is blocked until the quantity is corrected.
+
+---
 
 ### 🎨 Visual Design & UX
 
@@ -127,10 +246,11 @@ The same migration logic applies when importing a legacy JSON export file.
   - 🟡 Yellow (`badge-mid`) — cost/Km is between average and 120% of average
   - 🔴 Red (`badge-bad`) — cost/Km exceeds 120% of average
 - **📊 Efficiency progress bar:** Each record card shows a thin colored bar along its bottom edge that visually encodes the Km/kWh (or Km/L) efficiency of that session relative to all sessions of the active vehicle. See [Efficiency Progress Bar](#-efficiency-progress-bar) for the full specification.
-- **📊 Inline stat chips on record cards:** Each record card displays three stat chips in a row:
+- **📊 Inline stat chips on record cards:** Each record card displays stat chips in a row:
   - 🚩 **Distance** — kilometers traveled for that session.
-  - 🔋 / ⛽ **Quantity** — energy (kWh) or fuel (Liters) consumed.
-  - 💹 **Efficiency** — Km per unit (Km/kWh or Km/L), computed as `distanceKm / quantity`.
+  - 🔋 / ⛽ **Refueled** — energy (kWh) or fuel (Liters) put in.
+  - ♻️ **Efficiency** — Km per unit (Km/kWh or Km/L), computed using `effectiveEnergyConsumed` when available.
+  - ⚡ / ⛽ **Consumed** *(conditional)* — effective energy or fuel consumed between sessions, shown only when `effectiveEnergyConsumed` is stored on the record.
 - **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** for the active vehicle.
 - **📊 Sample data banner:** When sample records are present (flagged with `_sample: true`), a dismissable info banner is shown at the top of the Refueling tab inviting the user to clear the sample data and start with real records.
 - **📡 Empty state:** When no records exist for the active vehicle, an illustrated placeholder is shown. If no vehicle is selected at all, the empty state instead prompts the user to navigate to the Vehicles tab.
@@ -146,9 +266,10 @@ Each record card displays a **thin colored horizontal bar** anchored to the bott
 
 1. **Efficiency value** — For each record, the per-session efficiency is computed as:
    ```
-   kmpu = distanceKm / quantity          // e.g. 320 Km / 55 kWh = 5.82 Km/kWh
+   effectiveE = effectiveEnergyConsumed ?? effectiveQuantity ?? quantity
+   kmpu = distanceKm / effectiveE          // e.g. 320 Km / 55 kWh = 5.82 Km/kWh
    ```
-   If `quantity` is zero (edge case), `kmpu` defaults to `0`.
+   If the effective energy is zero (edge case), `kmpu` defaults to `0`.
 
 2. **Global range** — Before rendering any card, the function scans all sorted records of the active vehicle and computes:
    ```
@@ -244,8 +365,8 @@ A secondary grid provides:
 - 🔋 / ⛽ **Total Energy / Fuel** — total kWh or Liters consumed.
 - 💸 **Total Expense** — total euros spent.
 - 💰 **Average Cost per Km** — average €/Km across the period.
-- 📈 **Average Consumption** — kWh or L per 100 Km.
-- 💹 **Efficiency** — average Km per unit (Km/kWh or Km/L).
+- 📈 **Average Consumption** — kWh or L per 100 Km, using `effectiveEnergyConsumed` when available.
+- 💹 **Efficiency** — average Km per unit (Km/kWh or Km/L), using `effectiveEnergyConsumed` when available.
 
 ### 📉 Charts Tab
 
@@ -256,8 +377,8 @@ Twelve interactive charts powered by **Chart.js 4.4.1**, all themed to match the
 | 1 | **Distance Over Time** | Line | Km per session plotted over time, with a dashed **flat average** reference line. |
 | 2 | **Unit Price Over Time** | Line | Price per unit plotted chronologically, with a dashed **5-point moving average** overlay. |
 | 3 | **Cost per Km Over Time** | Line | Cost/Km per session plotted over time, with a dashed **flat average** reference line. |
-| 4 | **Consumption Over Time** | Line | Energy or fuel consumption per session (kWh/100Km or L/100Km) plotted over time, with a dashed **flat average** reference line. Color: amber (`#FB923C`). |
-| 5 | **Efficiency Over Time** | Line | Per-session efficiency (Km/kWh or Km/L) plotted over time, with a dashed **flat average** reference line. Color: purple (`#A855F7`). |
+| 4 | **Consumption Over Time** | Line | Energy or fuel consumption per session (kWh/100Km or L/100Km) plotted over time, with a dashed **flat average** reference line. Color: amber (`#FB923C`). Uses `effectiveEnergyConsumed` when available. |
+| 5 | **Efficiency Over Time** | Line | Per-session efficiency (Km/kWh or Km/L) plotted over time, with a dashed **flat average** reference line. Color: purple (`#A855F7`). Uses `effectiveEnergyConsumed` when available. |
 | 6 | **Monthly Total Expenditure** | Horizontal Bar | Total € spent per calendar month (uses all vehicle records, not the filter), with bars color-coded by season. |
 | 7 | **Average Price by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max price bars for each of the four seasons (uses all vehicle records). |
 | 8 | **Average Consumption by Season** | Grouped Horizontal Bar | Side-by-side Min / Avg / Max consumption (kWh/100Km or L/100Km) per season (uses all vehicle records). |
@@ -299,7 +420,8 @@ All charts feature:
 │                                              │
 │  ┌──────────────────────────────────────┐    │
 │  │ 08/03/2026               🟢 €0.14/Km │    │  ← Record card (season-colored border)
-│  │ 🚩 320Km | 🔋 55kWh | ♻️ 5.82Km/kWh  │    │
+│  │ 🚩 320Km | ♻️ 5.82Km/kWh             │    │
+│  │ 🔋 Refueled: 55kWh | ⚡ Consumed: 18kWh│  │  ← Refueled + Consumed chips
 │  │ € 13.75 💵  Shell Station 📍     📋  │    │
 │  │                                      │    │
 │  │▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░     │    │  ← Efficiency bar (green ~73%)
@@ -374,7 +496,8 @@ Before adding any refueling records, you need at least one vehicle profile. On f
 1. Tap **+ Add Vehicle** (empty-state button or the `+` icon in the section header).
 2. Enter a **Name** for the vehicle (e.g. "Tesla Model S", "Fiat Punto").
 3. Select the **Preferred Unit**: 🔋 **kWh** for electric vehicles, ⛽ **Liters** for combustion vehicles.
-4. Tap **Save Vehicle**. The vehicle is created and automatically set as the active profile.
+4. *(Optional)* Enter the **Battery Capacity (kWh)** (BEV) or **Tank Capacity (L)** (ICE) to enable SoC-based consumption tracking. See [SoC & Fuel Level Tracking](#-state-of-charge-soc--fuel-level-tracking).
+5. Tap **Save Vehicle**. The vehicle is created and automatically set as the active profile.
 
 ### ✅ Switching the Active Vehicle
 
@@ -386,7 +509,7 @@ Before adding any refueling records, you need at least one vehicle profile. On f
 
 1. Open the **Vehicles tab**.
 2. Tap the **pencil icon** on the vehicle card you want to edit.
-3. Modify the name or preferred unit, then tap **Save Vehicle**.
+3. Modify the name, preferred unit, or vehicle capacity, then tap **Save Vehicle**.
 
 ### 🗑️ Deleting a Vehicle
 
@@ -408,13 +531,19 @@ Before adding any refueling records, you need at least one vehicle profile. On f
    - **Quantity** — energy (kWh) or fuel (Liters) consumed, based on the active vehicle's unit.
    - **Price per unit** — the price you paid per kWh or per Liter.
 5. The **Total Cost** and **Cost per Km** fields update automatically as you type.
-6. Optionally add a **Location** (e.g. station name) and **Notes**.
-7. Tap **Save Record**. A toast confirms success and haptic feedback fires on mobile devices (`navigator.vibrate`).
+6. *(Optional)* Fill in the **SoC / Fuel Level** section:
+   - Enter **Initial SoC %** (or Initial Fuel Level % for ICE) to record the state before charging/refueling.
+   - The **Final SoC %** is auto-computed if the vehicle has a capacity set.
+   - For BEV vehicles, adjust the **Transfer Efficiency %** if needed (default 100%).
+   - The **Charge Progress Bar** appears and updates live.
+   - The **Effective Energy / Fuel Consumed** indicator shows how much energy was drawn from the battery between sessions.
+7. Optionally add a **Location** (e.g. station name) and **Notes**.
+8. Tap **Save Record**. A toast confirms success and haptic feedback fires on mobile devices (`navigator.vibrate`).
 
 ### ✏️ Editing a Record
 
 1. Tap anywhere on an existing record card.
-2. The form opens pre-filled with the record's data.
+2. The form opens pre-filled with the record's data, including all SoC/fuel level fields.
 3. Modify any field and tap **Save Record** to update.
 
 ### 📋 Duplicating a Record
@@ -429,11 +558,12 @@ The **Duplicate Record** feature allows quickly creating a new entry pre-filled 
    - **Date** is reset to today's date.
    - **Distance** and **Quantity** are cleared — the user must fill these in.
    - **Unit Price**, **Location**, and **Notes** are carried over from the original record (all editable).
+   - **Transfer Efficiency** is carried over from the original record for BEV vehicles (editable); fixed at 100% for ICE.
    - A hidden `createdAt` field is set to the current timestamp so the new record is correctly timestamped.
 4. Edit any fields as needed and tap **Save Record** to persist the new entry.
 5. A `warning` toast ("Record duplicated — edit the fields and save") is shown immediately after the duplication is initiated.
 
-> 💡 The duplicate workflow intentionally leaves Distance and Quantity empty to force the user to enter the values specific to the new session, while preserving contextual data (price, location, notes) that is likely to repeat.
+> 💡 The duplicate workflow intentionally leaves Distance and Quantity empty to force the user to enter the values specific to the new session, while preserving contextual data (price, location, notes, transfer efficiency) that is likely to repeat.
 
 ### 🗑️ Deleting a Record
 
@@ -458,7 +588,9 @@ Each vehicle profile is stored as a JSON object under the `chargemaster_v1_vehic
 {
   "id": "uuid-v4-string",
   "name": "Tesla Model S",
-  "unit": "kWh"
+  "unit": "kWh",
+  "batteryCapacityKwh": 75.0,
+  "tankCapacityL": null
 }
 ```
 
@@ -467,6 +599,8 @@ Each vehicle profile is stored as a JSON object under the `chargemaster_v1_vehic
 | `id` | string | UUID v4 — unique identifier for the vehicle. |
 | `name` | string | Display name of the vehicle (max 60 characters). |
 | `unit` | `"kWh"` \| `"L"` | Preferred measurement unit. Drives all labels, statistics, and chart axes for this vehicle. |
+| `batteryCapacityKwh` | number \| null | 🔋 Total usable battery capacity in kWh (BEV only). Used to compute SoC percentages and effective energy consumed. `null` if not set. |
+| `tankCapacityL` | number \| null | ⛽ Total fuel tank capacity in liters (ICE only). Used to compute fuel level percentages and effective fuel consumed. `null` if not set. |
 
 ### Refueling Record
 
@@ -482,12 +616,41 @@ Each record is stored as a JSON object under the `chargemaster_v1_records` local
   "unitPrice": 0.2500,
   "totalCost": 13.80,
   "costPerKm": 0.0431,
+  "initialSoC": 20.0,
+  "finalSoC": 75.0,
+  "initialFuelLevel": null,
+  "finalFuelLevel": null,
+  "transferEfficiency": 95.0,
+  "effectiveQuantity": 52.44,
+  "effectiveEnergyConsumed": 33.75,
   "location": "EnelX Anagnina",
   "notes": "Optional free-text notes",
   "createdAt": "ISO-8601 timestamp",
   "updatedAt": "ISO-8601 timestamp"
 }
 ```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | UUID v4 — unique identifier for the record. |
+| `vehicleId` | string | UUID v4 — links the record to its vehicle profile. |
+| `date` | string | Date of the session (`YYYY-MM-DD`). |
+| `distanceKm` | number | Kilometers traveled since the last session. |
+| `quantity` | number | Energy (kWh) or fuel (L) put into the vehicle. |
+| `unitPrice` | number | Price per unit (€/kWh or €/L). |
+| `totalCost` | number | `quantity × unitPrice`. |
+| `costPerKm` | number | `totalCost / distanceKm`. |
+| `initialSoC` | number \| null | 🔋 Battery charge level (%) **before** the charging session (BEV). `null` if not entered. |
+| `finalSoC` | number \| null | 🔋 Battery charge level (%) **after** the charging session (BEV, auto-computed). `null` if not available. |
+| `initialFuelLevel` | number \| null | ⛽ Tank fuel level (%) **before** refueling (ICE). `null` if not entered. |
+| `finalFuelLevel` | number \| null | ⛽ Tank fuel level (%) **after** refueling (ICE, auto-computed). `null` if not available. |
+| `transferEfficiency` | number | ⚡ Fraction of charged energy stored in the battery (%). Always `100` for ICE. |
+| `effectiveQuantity` | number | `quantity × (transferEfficiency / 100)` — energy actually delivered to the battery. |
+| `effectiveEnergyConsumed` | number \| null | ⚡ / ⛽ Absolute energy or fuel consumed between sessions, derived from the SoC delta and vehicle capacity. `null` if capacity or initial SoC is not set. |
+| `location` | string \| null | Optional station or location name (max 100 characters). |
+| `notes` | string \| null | Optional free-text notes (max 500 characters). |
+| `createdAt` | string | ISO 8601 timestamp — when the record was first saved. |
+| `updatedAt` | string | ISO 8601 timestamp — when the record was last modified. |
 
 The `vehicleId` field links each record to its vehicle profile. Records whose `vehicleId` does not match any existing vehicle are automatically reassigned to the first available vehicle on load (migration safeguard).
 
@@ -640,6 +803,7 @@ Tab switching uses smooth CSS transitions: the outgoing panel slides to the left
 - Season accordion headers use `aria-expanded` to communicate open/closed state.
 - Form inputs include explicit `<label>` associations and `aria-label` attributes.
 - Vehicle action buttons (select, edit, delete) each carry descriptive `aria-label` and `title` attributes.
+- The SoC fields (Initial SoC, Final SoC, Transfer Efficiency) include `aria-label` attributes.
 - Color is never the sole indicator of meaning (badges also differ in value context; seasons also have icon labels; active vehicle is indicated by both border color and button state).
 
 ---

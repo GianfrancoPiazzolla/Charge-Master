@@ -1747,9 +1747,9 @@ function updateSoCProgressBar() {
   const initial = Math.max(0, Math.min(100, initialVal));
   const final_ = Math.max(0, Math.min(100, finalVal));
   const delta = Math.max(0, final_ - initial);
-  document.getElementById('soc-prog-initial').textContent = initial.toFixed(0) + '%';
-  document.getElementById('soc-prog-final').textContent = final_.toFixed(0) + '%';
-  document.getElementById('soc-prog-delta').textContent = '+' + delta.toFixed(0) + '%';
+  document.getElementById('soc-prog-initial').textContent = initial.toFixed(0) + ' %';
+  document.getElementById('soc-prog-final').textContent = final_.toFixed(0) + ' %';
+  document.getElementById('soc-prog-delta').textContent = '+' + delta.toFixed(0) + ' %';
   const fill = document.getElementById('soc-prog-fill');
   fill.style.left = initial + '%';
   fill.style.width = (final_ - initial) + '%';

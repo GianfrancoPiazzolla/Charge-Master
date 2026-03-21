@@ -2425,7 +2425,7 @@ function exportRecords() {
   const date = new Date().toISOString().split('T')[0];
   const vehicles = AppState.vehicles.map(function(v) {
     const vRecords = AppState.records.filter(function(r) { return r.vehicleId === v.id; });
-    return { vehicleId: v.id, vehicleName: v.name, unit: v.unit, recordCount: vRecords.length };
+    return { vehicleId: v.id, vehicleName: v.name, unit: v.unit, batteryCapacityKwh: v.batteryCapacityKwh != null ? v.batteryCapacityKwh : null, tankCapacityL: v.tankCapacityL != null ? v.tankCapacityL : null, recordCount: vRecords.length };
   });
   const data = { exportedAt: new Date().toISOString(), appVersion: APP_VERSION, vehicles: vehicles, records: AppState.records };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -2499,7 +2499,7 @@ function doImport(mode) {
   const existingVehicleIds = new Set(AppState.vehicles.map(v => v.id));
   impVehicles.forEach(function(iv) {
     if (iv.vehicleId && !existingVehicleIds.has(iv.vehicleId)) {
-      AppState.vehicles.push({ id: iv.vehicleId, name: iv.vehicleName || 'Imported Vehicle', unit: iv.unit || 'kWh' });
+      AppState.vehicles.push({ id: iv.vehicleId, name: iv.vehicleName || 'Imported Vehicle', unit: iv.unit || 'kWh', batteryCapacityKwh: iv.batteryCapacityKwh != null ? iv.batteryCapacityKwh : null, tankCapacityL: iv.tankCapacityL != null ? iv.tankCapacityL : null });
       existingVehicleIds.add(iv.vehicleId);
     }
   });

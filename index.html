@@ -285,7 +285,7 @@ html, body {
 .note-icon { margin-left: auto; font-size: 14px; line-height: 1; flex-shrink: 0; }
 
 .menu-btn {
-  position: absolute; right: 7px; top: 50%; transform: translateY(-5%);
+  position: absolute; right: 8px; top: 40%; transform: translateY(-5%);
   width: 32px; height: 32px; border-radius: 8px;
   background: none; border: none; cursor: pointer;
   color: var(--text-muted); display: flex; align-items: center; justify-content: center;
@@ -1566,14 +1566,12 @@ function openForm(id) {
   document.getElementById('notes-count').textContent = '0';
   document.querySelectorAll('.form-input').forEach(i => i.classList.remove('error','valid'));
 
-  // default date
   document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
 
   const u = unitLabel();
   document.getElementById('label-quantity').textContent = `Refuel (${u})`;
   document.getElementById('label-price').textContent = `Price per ${u} (€)`;
 
-  // Show SoC/fuel level fields for all vehicle types, with appropriate labels
   const isKwh = u === 'kWh';
   document.getElementById('label-initial-soc').textContent = isKwh ? 'Initial SoC (%)' : 'Initial Fuel Level (%)';
   document.getElementById('label-final-soc').textContent = isKwh ? 'Final SoC (%)' : 'Final Fuel Level (%)';
@@ -1583,7 +1581,6 @@ function openForm(id) {
   document.getElementById('soc-final-row').style.display = '';
   document.getElementById('soc-computed-row').style.display = '';
 
-  // Transfer Efficiency: editable for BEV (default 100%), fixed at 100% for ICE
   const teField = document.getElementById('field-transfer-efficiency');
   const teLabel = document.getElementById('label-transfer-efficiency');
   if (isKwh) {
@@ -1621,7 +1618,7 @@ function openForm(id) {
       }
       document.getElementById('btn-delete-record').style.display = 'flex';
       document.getElementById('btn-duplicate-record').style.display = 'flex';
-      // Load transferEfficiency from saved record (fallback to default)
+
       const savedTE = rec.transferEfficiency != null ? rec.transferEfficiency : (isKwh ? 100 : 100);
       const teFieldEdit = document.getElementById('field-transfer-efficiency');
       teFieldEdit.value = savedTE;
@@ -1643,28 +1640,23 @@ function openForm(id) {
 function closeForm() { closeModal('modal-form'); }
 
 function getPreviousFinalSoC(currentRecordId, currentDate, currentCreatedAt) {
-  // Get all records for the active vehicle sorted by date ascending
   const vehicleRecs = AppState.activeVehicleId
     ? AppState.records.filter(r => r.vehicleId === AppState.activeVehicleId)
     : AppState.records;
-  // Exclude the record being edited (if any)
+
   const others = vehicleRecs.filter(r => r.id !== currentRecordId);
-  // Sort by date ascending, then by createdAt ascending
+
   const sorted = [...others].sort((a,b) => {
     const d = a.date.localeCompare(b.date);
     return d !== 0 ? d : (a.createdAt || '').localeCompare(b.createdAt || '');
   });
-  // Find the most recent record before the current one:
-  // - strictly earlier date, OR
-  // - same date with earlier createdAt (or no createdAt constraint for new unsaved records)
+
   let prev = null;
   for (let i = 0; i < sorted.length; i++) {
     const r = sorted[i];
     if (r.date < currentDate) {
       prev = r;
     } else if (r.date === currentDate) {
-      // For a new record (currentCreatedAt empty/null), all existing same-date records are previous
-      // For an existing record, only include same-date records saved before it
       if (!currentCreatedAt || (r.createdAt || '') < currentCreatedAt) {
         prev = r;
       } else {
@@ -1675,7 +1667,7 @@ function getPreviousFinalSoC(currentRecordId, currentDate, currentCreatedAt) {
     }
   }
   if (!prev) return null;
-  // Return finalSoC for BEV, finalFuelLevel for ICE
+
   const isKwh = unitLabel() === 'kWh';
   return isKwh ? (prev.finalSoC != null ? prev.finalSoC : null)
                : (prev.finalFuelLevel != null ? prev.finalFuelLevel : null);
@@ -1690,7 +1682,6 @@ function updateComputed() {
   document.getElementById('computed-total').textContent = total > 0 ? `€ ${total.toFixed(2)}` : '—';
   document.getElementById('computed-cpkm').textContent = cpkm > 0 ? `€ ${cpkm.toFixed(2)}` : '—';
 
-  // Effective consumption (both BEV and ICE)
   const isKwh = unitLabel() === 'kWh';
   const unit = isKwh ? 'kWh' : 'L';
   const currentId = document.getElementById('field-id').value || null;
@@ -1698,13 +1689,11 @@ function updateComputed() {
   const currentCreatedAt = document.getElementById('field-created-at').value || null;
   const initialLevelPct = parseFloat(document.getElementById('field-initial-soc').value);
 
-  // Get vehicle capacity for converting % to absolute values
   const v = getActiveVehicle();
   const capacity = isKwh
     ? (v && v.batteryCapacityKwh ? v.batteryCapacityKwh : null)
     : (v && v.tankCapacityL ? v.tankCapacityL : null);
 
-  // Auto-calculate Final SoC% = clamp(Initial SoC% + (qty * transferEfficiency/100) / capacity * 100, 0, 100)
   const teRaw = parseFloat(document.getElementById('field-transfer-efficiency').value);
   const transferEfficiency = (!isNaN(teRaw) && teRaw >= 0 && teRaw <= 100) ? teRaw : (isKwh ? 100 : 100);
   const finalSoCField = document.getElementById('field-final-soc');
@@ -1722,18 +1711,15 @@ function updateComputed() {
   let prevFinalPctFromRecord = getPreviousFinalSoC(currentId, currentDate, currentCreatedAt);
   let prevFinalPct = prevFinalPctFromRecord;
   if (prevFinalPct == null) {
-    // Fallback: assume 100%
     prevFinalPct = 100;
   }
 
-  // Display Previous Final SoC / Fuel Level
   if (prevFinalPctFromRecord != null) {
     document.getElementById('computed-prev-final-soc').textContent = `${prevFinalPctFromRecord.toFixed(1)} %`;
   } else {
     document.getElementById('computed-prev-final-soc').textContent = `100 % (assumed)`;
   }
 
-  // Display Effective Energy / Fuel Consumed
   if (!isNaN(initialLevelPct) && initialLevelPct >= 0) {
     const consumedPct = prevFinalPct - initialLevelPct;
     if (capacity != null) {
@@ -1791,7 +1777,6 @@ function validateForm() {
     if (!ok) { el.classList.add('shake'); el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true}); valid = false; }
   });
 
-  // Optional range-bounded fields: validate only when a value is entered
   const rangeFields = [
     { el: document.getElementById('field-initial-soc'), check: v => v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 100) },
     { el: document.getElementById('field-transfer-efficiency'), check: v => v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 100) },
@@ -1803,7 +1788,6 @@ function validateForm() {
     if (!ok) { el.classList.add('shake'); el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true}); valid = false; }
   });
 
-  // Check that Refuel value does not cause Final SoC to exceed 100%
   const qtyEl = document.getElementById('field-quantity');
   const qtyErrEl = document.getElementById('field-quantity-error');
   const initialSoCVal = parseFloat(document.getElementById('field-initial-soc').value);
@@ -1845,49 +1829,36 @@ document.getElementById('refuel-form').addEventListener('submit', function(e) {
   const cpkm = total / dist;
   const now = new Date().toISOString();
 
-  // SoC / Fuel level fields (stored as percentages, 0–100)
   const isKwh = unitLabel() === 'kWh';
   const levelRaw = parseFloat(document.getElementById('field-initial-soc').value);
   const finalLevelRaw = parseFloat(document.getElementById('field-final-soc').value);
   const initialLevel = (!isNaN(levelRaw) && levelRaw >= 0 && levelRaw <= 100) ? levelRaw : null;
   const finalLevel = (!isNaN(finalLevelRaw) && finalLevelRaw >= 0 && finalLevelRaw <= 100) ? finalLevelRaw : null;
 
-  // Read transfer efficiency (always 100 for ICE)
   const teRaw = parseFloat(document.getElementById('field-transfer-efficiency').value);
-  const transferEfficiency = isKwh
-    ? ((!isNaN(teRaw) && teRaw >= 0 && teRaw <= 100) ? teRaw : 100)
-    : 100;
-
-  // Effective quantity = energy actually delivered to the battery
+  const transferEfficiency = isKwh ? ((!isNaN(teRaw) && teRaw >= 0 && teRaw <= 100) ? teRaw : 100) : 100;
   const effectiveQuantity = qty * (transferEfficiency / 100);
 
-  // Get vehicle capacity for computing absolute effective energy consumed
   const v = getActiveVehicle();
-  const capacity = isKwh
-    ? (v && v.batteryCapacityKwh ? v.batteryCapacityKwh : null)
-    : (v && v.tankCapacityL ? v.tankCapacityL : null);
+  const capacity = isKwh ? (v && v.batteryCapacityKwh ? v.batteryCapacityKwh : null) : (v && v.tankCapacityL ? v.tankCapacityL : null);
 
-  // Compute effective consumed (in absolute units, using capacity if available)
   let effectiveEnergyConsumed = null;
   if (initialLevel != null) {
     const currentDate = document.getElementById('field-date').value;
     const currentCreatedAt = document.getElementById('field-created-at').value || null;
     let prevFinalSoCPct = getPreviousFinalSoC(id || null, currentDate, currentCreatedAt);
     if (prevFinalSoCPct == null) {
-      prevFinalSoCPct = 100; // assume full
+      prevFinalSoCPct = 100;
     }
     const consumedPct = prevFinalSoCPct - initialLevel;
     if (capacity != null) {
       effectiveEnergyConsumed = (consumedPct / 100) * capacity;
     } else {
-      effectiveEnergyConsumed = null; // cannot compute without capacity
+      effectiveEnergyConsumed = null;
     }
   }
 
-  // Map to correct field names per vehicle type
-  const socFields = isKwh
-    ? { initialSoC: initialLevel, finalSoC: finalLevel, initialFuelLevel: null, finalFuelLevel: null, transferEfficiency: transferEfficiency, effectiveQuantity: effectiveQuantity }
-    : { initialSoC: null, finalSoC: null, initialFuelLevel: initialLevel, finalFuelLevel: finalLevel, transferEfficiency: 100, effectiveQuantity: effectiveQuantity };
+  const socFields = isKwh ? { initialSoC: initialLevel, finalSoC: finalLevel, initialFuelLevel: null, finalFuelLevel: null, transferEfficiency: transferEfficiency, effectiveQuantity: effectiveQuantity } : { initialSoC: null, finalSoC: null, initialFuelLevel: initialLevel, finalFuelLevel: finalLevel, transferEfficiency: 100, effectiveQuantity: effectiveQuantity };
 
   if (id) {
     const idx = AppState.records.findIndex(r => r.id === id);
@@ -1973,7 +1944,7 @@ function duplicateRecord() {
   document.getElementById('field-location').value = location;
   document.getElementById('field-notes').value = notes;
   document.getElementById('notes-count').textContent = notes.length;
-  // Restore transfer efficiency from duplicated record
+
   const isKwhDup = unitLabel() === 'kWh';
   const teFieldDup = document.getElementById('field-transfer-efficiency');
   if (isKwhDup) {

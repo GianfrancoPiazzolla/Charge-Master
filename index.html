@@ -706,6 +706,21 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
 .page-btn:hover:not(.active) { border-color: var(--border-active); color: var(--text-primary); }
 .page-info { font-size: var(--text-xs); color: var(--text-muted); font-family: var(--font-mono); }
 
+/* EXPORT MODAL TEXTAREA */
+.export-textarea {
+  width: 100%; height: 200px; resize: none;
+  background: var(--bg-primary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 11px; padding: 10px;
+  line-height: 1.5; outline: none; margin-bottom: 10px;
+  -webkit-user-select: text; user-select: text;
+}
+.export-textarea:focus { border-color: var(--border-active); }
+.export-filename {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--text-muted); margin-bottom: 10px; word-break: break-all;
+}
+
 /* VEHICLE BADGE */
 .vehicle-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -972,6 +987,20 @@ input[type="date"], input[type="number"], input[type="text"], select, textarea {
       <div id="delete-all-confirm-wrap"></div>
     </div>
     <button class="btn btn-secondary ripple-host" onclick="closeModal('modal-settings')">Close</button>
+  </div>
+</div>
+
+<!-- MODAL: EXPORT -->
+<div class="modal-overlay" id="modal-export" role="dialog" aria-modal="true" aria-label="Export data">
+  <div class="modal-dialog">
+    <div class="modal-title">Export Records</div>
+    <div class="export-filename" id="export-filename"></div>
+    <textarea class="export-textarea" id="export-textarea" readonly></textarea>
+    <button class="btn btn-primary ripple-host" onclick="copyExportToClipboard()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy to Clipboard
+    </button>
+    <button class="btn btn-secondary ripple-host" onclick="closeModal('modal-export')">Close</button>
   </div>
 </div>
 
@@ -2428,13 +2457,61 @@ function exportRecords() {
     return { vehicleId: v.id, vehicleName: v.name, unit: v.unit, batteryCapacityKwh: v.batteryCapacityKwh != null ? v.batteryCapacityKwh : null, tankCapacityL: v.tankCapacityL != null ? v.tankCapacityL : null, recordCount: vRecords.length };
   });
   const data = { exportedAt: new Date().toISOString(), appVersion: APP_VERSION, vehicles: vehicles, records: AppState.records };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `chargemaster_export_${date}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showToast('Export complete', 'success');
+  const jsonStr = JSON.stringify(data, null, 2);
+  const filename = 'chargemaster_export_' + date + '.json';
+  const isWebView = (function() {
+    const ua = navigator.userAgent;
+    return /wv/.test(ua) || (/Android/.test(ua) && !/Chrome\/[.0-9]*/.test(ua)) || (typeof window.Website2APK !== 'undefined');
+  })();
+  if (!isWebView) {
+    try {
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Export complete', 'success');
+      return;
+    } catch(e) {}
+  }
+  if (navigator.share && navigator.canShare) {
+    try {
+      const file = new File([jsonStr], filename, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: filename }).then(function() {
+          showToast('Export complete', 'success');
+        }).catch(function() {
+          showExportModal(jsonStr, filename);
+        });
+        return;
+      }
+    } catch(e) {}
+  }
+  showExportModal(jsonStr, filename);
+}
+
+function showExportModal(jsonStr, filename) {
+  document.getElementById('export-filename').textContent = filename;
+  document.getElementById('export-textarea').value = jsonStr;
+  closeModal('modal-settings');
+  setTimeout(function() { openModal('modal-export'); }, 250);
+}
+
+function copyExportToClipboard() {
+  const ta = document.getElementById('export-textarea');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(function() {
+      showToast('Copied to clipboard', 'success');
+    }).catch(function() {
+      ta.select(); document.execCommand('copy');
+      showToast('Copied to clipboard', 'success');
+    });
+  } else {
+    ta.select(); document.execCommand('copy');
+    showToast('Copied to clipboard', 'success');
+  }
 }
 
 function triggerImport() { document.getElementById('import-file-input').click(); }

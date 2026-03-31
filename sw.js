@@ -1,6 +1,6 @@
 const CACHE_NAME = 'charge-master-cache-v1';
 const ASSETS_TO_CACHE = [
-  '/Charge-Master/',
+  '/',
   'index.html',
   'manifest.json',
   'favicon.ico',

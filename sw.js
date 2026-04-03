@@ -2,7 +2,6 @@ const CACHE_NAME = 'charge-master-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   'index.html',
-  'manifest.json',
   'favicon.ico',
   'icon-192x192.png',
   'icon-512x512.png'

@@ -28,8 +28,10 @@
 - [PWA & Offline Support](#-pwa--offline-support)
 - [Settings & Customization](#-settings--customization)
 - [Data Management](#-data-management)
+- [About Modal](#ℹ️-about-modal)
 - [Efficiency Progress Bar](#-efficiency-progress-bar)
 - [Charts & Visualizations](#-charts--visualizations)
+- [Visual Design System](#-visual-design-system)
 - [Statistics & Analytics](#-statistics--analytics)
 - [Keyboard & Gesture Navigation](#-keyboard--gesture-navigation)
 - [Accessibility](#-accessibility)
@@ -95,6 +97,8 @@ The same migration logic applies when importing a legacy JSON export file.
 ### 🗂️ Record Management
 
 - **➕ Add refueling/charging records** via a floating action button (FAB) that is always accessible. If no vehicle is selected, the app redirects to the Vehicles tab with a warning toast.
+  - **🔵 FAB Pulse Animation** — When no records exist for the active vehicle, the FAB pulses with an infinite `fabPulse` animation (glowing box-shadow oscillation) to draw attention. The pulse is removed once records are added.
+  - **👁️ FAB Visibility Toggle** — The FAB is **hidden** on the Vehicles tab (`display: none`) and **visible** on all other tabs (Refueling, Statistics, Charts).
 - **✏️ Edit any existing record** by tapping on it in the list — the same form is reused for both creation and editing.
 - **📋 Duplicate any existing record** via the **Duplicate Record** button available in the edit form. See [Duplicating a Record](#-duplicating-a-record) for full details.
 - **🗑️ Delete individual records** with an inline two-step confirmation to prevent accidental deletion.
@@ -185,7 +189,7 @@ effectiveConsumed = (consumedPct / 100) × capacity    // in kWh or L
 A visual progress bar is shown inside the form whenever both **Initial SoC %** and **Final SoC %** are known:
 
 ```
-[■■■░░░░░░░░░░░░■■■■] Initial: 20% ▶ Final: 75%  |  Charged: +55%
+[■■■■■■■■░░░░░░░░░░░░] Initial: 20% ▶ Final: 75%  |  Charged: +55%
 ```
 
 - The bar fill starts at `initialSoC%` and extends to `finalSoC%` within a full-width track.
@@ -252,7 +256,6 @@ The **Quantity** field is highlighted in red with a shake animation, and the err
   - ♻️ **Efficiency** — Km per unit (Km/kWh or Km/L), computed using `effectiveEnergyConsumed` when available.
   - ⚡ / ⛽ **Consumed** *(conditional)* — effective energy or fuel consumed between sessions, shown only when `effectiveEnergyConsumed` is stored on the record.
 - **💡 Summary ribbon:** A persistent banner at the top of the Refueling tab always shows the **total number of records**, **total money spent (€)**, and **total kilometers** for the active vehicle.
-- **📊 Sample data banner:** When sample records are present (flagged with `_sample: true`), a dismissable info banner is shown at the top of the Refueling tab inviting the user to clear the sample data and start with real records.
 - **📡 Empty state:** When no records exist for the active vehicle, an illustrated placeholder is shown. If no vehicle is selected at all, the empty state instead prompts the user to navigate to the Vehicles tab.
 - **🔔 Toast notifications:** Non-intrusive, auto-dismissing toast messages (max 3 at once) appear after every user action (save, delete, export, import, vehicle changes), with ✓ / ✕ / ⚠ icons.
 - **⚡ Ripple effect:** All interactive buttons and tappable elements feature a touch-responsive radial ripple animation for tactile feedback.
@@ -669,9 +672,7 @@ The `vehicleId` field links each record to its vehicle profile. Records whose `v
 Charge Master is a fully installable **Progressive Web App**:
 
 - 📲 **Installable** — on mobile (iOS/Android) and desktop (Chrome/Edge), users can install it to the home screen or app launcher via the browser's "Add to Home Screen" / "Install" prompt.
-- 🔌 **Offline-first** — two Service Worker registrations are active:
-  - An **inline blob-based Service Worker** generated at runtime (`initPWA()`), which caches the app shell immediately on first load using a `chargemaster-v1` cache.
-  - An **external Service Worker** (`/sw.js`) registered via a standard `navigator.serviceWorker.register('/sw.js')` call on the `window load` event, for environments where a physical `sw.js` file is deployed alongside the app.
+- 🔌 **Offline-first** — an external Service Worker (`/sw.js`) is registered via a standard `navigator.serviceWorker.register('/sw.js')` call on the `window load` event, for environments where a physical `sw.js` file is deployed alongside the app.
 - 🎨 **Themed status bar** — on iOS (via `apple-mobile-web-app-status-bar-style`) and Android (via `theme-color` meta tag), the status bar matches the app's dark/light theme.
 - 🖼️ **Dynamic icons** — app icons (192×192 and 512×512) are generated programmatically on a `<canvas>` with the branded blue-to-cyan gradient and a lightning bolt symbol.
 - 📄 **Web App Manifest** — dynamically injected at runtime with name, short name, description, orientation, colors, and icons.
@@ -688,20 +689,53 @@ Toggle between **Dark Mode** (default) and **Light Mode**. The toggle is availab
 
 ---
 
+## ℹ️ About Modal
+
+A polished information panel accessible from the header.
+
+**📍 Access:**
+- Click the **ℹ️ info icon** in the top-right header (rightmost button)
+
+**📋 Contents:**
+- **⚡ App Logo** — Branded lightning bolt icon on a blue-to-cyan gradient rounded square
+- **🏷️ App Name** — "Charge Master" in gradient display font
+- **🔢 Version** — Dynamically rendered app version (e.g. `v1.1.0`)
+- **👤 Author Card** — Avatar with initials ("GP"), author name (Gianfranco Piazzolla), and tagline
+- **📝 Synopsis** — Brief description of the app's purpose
+- **🔗 GitHub Repository** — Direct link to the Charge Master repository
+- **💻 More Apps** — Link to the author's GitHub profile
+- **📜 License** — MIT License summary
+
+**🎭 UI Behavior:**
+- Modal dialog (centered, max-width 360px) with backdrop blur (`4px`) and dark semi-transparent background
+- Scale-in entrance animation (`scale(0.92) → scale(1)`) with blue glow shadow (`0 0 60px rgba(59,130,246,0.15)`)
+- Close via the **Close** button at the bottom
+
+---
+
 ## 💾 Data Management
 
 ### 📤 Export
 
 - Go to **Settings → Export All Records (JSON)**.
 - A `.json` file named `chargemaster_export_YYYY-MM-DD.json` is automatically downloaded.
-- The export envelope includes metadata: `exportedAt`, `appVersion`, `vehicles` (array of vehicle profiles with record counts), and the full `records` array.
+- The export envelope includes metadata: `exportedAt`, `appVersion`, `vehicles` (array of vehicle profiles with record counts **including `batteryCapacityKwh` and `tankCapacityL`**), and the full `records` array.
+
+**🔄 Three-Tier Export Strategy:**
+1. **📥 Blob Download** — Standard browsers receive an automatic file download via `URL.createObjectURL()` and a temporary `<a>` element.
+2. **📱 Web Share API** — On mobile devices that support `navigator.share()`, the app offers to share the export file directly (e.g. via WhatsApp, email, or file manager).
+3. **📋 Modal Fallback** — In WebView environments (detected via `/wv/` UA test or `window.Website2APK` check) or when blob download fails, a centered modal dialog appears with:
+   - The export filename displayed in monospace font
+   - A readonly `<textarea>` preview of the full JSON content
+   - A **📋 Copy to Clipboard** button that copies the entire JSON to the clipboard
+   - A **Close** button to dismiss the modal
 
 ```json
 {
   "exportedAt": "ISO-8601 timestamp",
   "appVersion": "1.1.0",
   "vehicles": [
-    { "vehicleId": "uuid", "vehicleName": "Tesla Model S", "unit": "kWh", "recordCount": 24 }
+    { "vehicleId": "uuid", "vehicleName": "Tesla Model S", "unit": "kWh", "recordCount": 24, "batteryCapacityKwh": 75.0, "tankCapacityL": null }
   ],
   "records": [ ... ]
 }
@@ -711,9 +745,11 @@ Toggle between **Dark Mode** (default) and **Light Mode**. The toggle is availab
 
 - Go to **Settings → Import Records from File**.
 - Select a `.json` file previously exported from Charge Master (or a raw array of valid record objects).
-- A dialog asks how to handle the import:
-  - **⚠ Overwrite All** — replaces all existing records and vehicles with the imported ones (irreversible).
+- A modal dialog appears showing the **number of records** to import, with two options:
+  - **⚠ Overwrite All** — replaces all existing records and vehicles with the imported ones (irreversible). Styled with a red border for visual warning.
   - **✓ Merge** — adds only records whose `id` is not already present in the local database (deduplication by UUID). Vehicle profiles present in the import file but not in the local database are also added.
+- **Import Validation:** Each imported record must have the following required fields to be considered valid: `id`, `date`, `distanceKm`, `quantity`, and `unitPrice`. Records missing any of these are silently skipped.
+- **Orphaned Record Handling:** During import, records with an invalid or missing `vehicleId` are automatically reassigned to the active vehicle (or the first available vehicle if none is active).
 - **Legacy file handling:** If the imported file does not contain a `vehicles` array (exported from v1.0.0), a `"Default"` vehicle profile is automatically created and all imported records are assigned to it.
 - If the file is malformed or contains no valid records, an error toast is shown.
 
@@ -771,6 +807,75 @@ Each line chart includes:
 - **Chart 12 (Monthly Frequency):** Doughnut showing how many sessions occurred in each calendar month. Colors use an HSL gradient from cool blue to warm blue.
 
 All charts are properly destroyed (`chart.destroy()`) before being re-created to prevent memory leaks and canvas conflicts.
+
+---
+
+## 🎨 Visual Design System
+
+Charge Master features a premium, meticulously crafted visual design with a comprehensive token-based system.
+
+### 🖋️ Typography
+
+Three Google Fonts are loaded with specific weight ranges:
+
+| Font | Role | Weights | CSS Variable |
+|---|---|---|---|
+| **Rajdhani** | Display/headings | 400, 500, 600, 700 | `--font-display` |
+| **DM Sans** | Body text | 300, 400, 500, 600 | `--font-body` |
+| **JetBrains Mono** | Data/numbers/code | 400, 500, 600 | `--font-mono` |
+
+**Font Size Scale:**
+- `--text-xs`: 12px — labels, badges, tooltips
+- `--text-sm`: 12px — secondary text, chips
+- `--text-base`: 15px — body text, form inputs
+- `--text-lg`: 18px — section titles, card values
+- `--text-xl`: 22px — header title, modal titles
+- `--text-2xl`: 28px — about app name
+- `--text-3xl`: 36px — hero values
+
+**Border Radius Scale:**
+- `--radius-sm`: 8px — small buttons, chips
+- `--radius-md`: 12px — form inputs, modals
+- `--radius-lg`: 16px — cards, record cards
+- `--radius-xl`: 24px — modal sheet top corners
+
+### 🎭 Theme System
+
+- **🌙 Dark Mode** (default): Deep navy/charcoal palette (`#0A0E1A` background, `#111827` cards, `#1E2435` tertiary).
+- **☀️ Light Mode**: Clean slate-gray palette (`#F1F5F9` background, `#FFFFFF` cards, `#E2E8F0` tertiary).
+- Global transitions (`300ms ease`) on `color` and `background-color` for smooth theme switching.
+- Form inputs use `color-scheme: dark/light` to adapt native date pickers and number spinners to the active theme.
+- Status bar color (`theme-color` meta tag) updates dynamically to match the active theme.
+
+### ✨ Animations & Transitions
+
+- **🃏 Card Entrance Animation** — All cards (records, vehicles, stat cards) animate in with `opacity: 0 → 1` and `translateY(16px) → 0` using `cubic-bezier(0.4, 0, 0.2, 1)` easing. Staggered delays are applied (`i × 40ms` for records, `i × 50ms` for vehicles).
+- **🃏 Card Hover Effects** — Cards lift (`translateY(-2px)`) with an enhanced shadow on hover. Record cards additionally change their border color to `var(--border-active)`.
+- **⚡ Ripple Effect** — All interactive elements with the `.ripple-host` class feature a radial gradient ripple via `::after` pseudo-element, positioned using CSS custom properties (`--rx`, `--ry`), with a scale-down press effect (`scale(0.97)`, 80ms transition).
+- **📑 Tab Panel Transitions** — Incoming panels slide in from the right (`translateX(30px)`), outgoing panels slide left (`translateX(-30px)`), both with `280ms cubic-bezier(0.4, 0, 0.2, 1)` easing. Panels use `will-change: opacity, transform` for GPU-accelerated rendering.
+- **🔘 Toggle Switch** — Features a spring animation (`cubic-bezier(0.34, 1.56, 0.64, 1)`) for the knob, with a 22px white circle that translates 20px when activated.
+- **📊 Tab Bar Active Indicator** — The active tab displays a glowing top-bar indicator (`::before` pseudo-element) with a `scaleX` animation and `box-shadow` glow effect in the accent primary color.
+- **🔘 Icon Button Hover Glow** — Header icon buttons gain a `0 0 12px var(--accent-glow)` box-shadow on hover.
+
+### 🎨 Component Styling
+
+- **🪟 Glass Morphism** — `.card-glass` class with `backdrop-filter: blur(12px)` and semi-transparent background for layered visual depth.
+- **📜 Custom Scrollbar** — 4px-wide scrollbar with transparent track and subtle thumb (`var(--border-subtle)`), styled via `::-webkit-scrollbar`.
+- **🔘 Button Variants (4 types):**
+  - **Primary** — Blue gradient (`var(--accent-primary)` → `#2563EB`) with glow shadow
+  - **Secondary** — Tertiary background with subtle border
+  - **Danger** — Red-tinted background (`rgba(239,68,68,0.12)`) with red border
+  - **Success** — Green-tinted background (`rgba(16,185,129,0.12)`) with green border
+- **📊 Computed Fields** — Blue-tinted background (`rgba(59,130,246,0.07)`) with blue border, displaying label/value pairs in monospace font.
+- **🚗 Vehicle Card Icons** — Blue-to-cyan gradient background on the icon container.
+- **📊 Stat Chips** — Flex-wrap container with tertiary background, monospace font for values, and 3px gap between chips.
+
+### 📱 Mobile Optimizations
+
+- **Safe Area Padding** — Tab bar includes `padding-bottom: env(safe-area-inset-bottom)` for devices with home indicators (iPhone X+).
+- **Viewport Fit** — `viewport-fit=cover` meta tag enables full-screen rendering on notched devices.
+- **Overflow Management** — `html, body` use `overflow: hidden` with scrollable tab panels for controlled scrolling.
+- **Font Smoothing** — `-webkit-font-smoothing: antialiased` for crisp text rendering on WebKit browsers.
 
 ---
 
